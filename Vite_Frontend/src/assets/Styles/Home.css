@@ -1,0 +1,86 @@
+.Map-Container{
+    margin-left:10vw ;
+}
+
+/* Global premium typography + background */
+html, body, #root {
+    background: linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+    color: var(--fg-0);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.hero{
+    padding-top: 18vh;
+    display: flex;
+    justify-content: center;
+}
+.hero-inner{
+    width: 80vw;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+    box-shadow: var(--elev);
+    padding: 48px;
+}
+.hero-title{
+    margin: 0 0 8px 0;
+    font-size: 40px;
+    letter-spacing: 0.4px;
+}
+.hero-sub{
+    margin: 0 0 24px 0;
+    color: var(--fg-1);
+}
+.hero-cta{
+    display: flex;
+    gap: 12px;
+}
+.cta{
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    color: var(--fg-0);
+}
+.cta.primary{
+    background: linear-gradient(180deg, #2b80ff, #1f6ae0);
+}
+.cta.subtle{
+    background: transparent;
+}
+
+.kpis{
+    margin: 24px auto 0 auto;
+    width: 80vw;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.kpi-card{
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+}
+.kpi-title{ color: var(--fg-1); margin-bottom: 8px; }
+.kpi-value{ font-size: 22px; }
+
+.quick-grid{
+    margin: 16px auto 40px auto;
+    width: 80vw;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.quick-card{
+    text-decoration: none;
+    color: var(--fg-0);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+}
+.qc-title{ margin-bottom: 6px; }
+.qc-sub{ color: var(--fg-1); }

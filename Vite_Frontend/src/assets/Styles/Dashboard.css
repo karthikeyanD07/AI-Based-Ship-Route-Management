@@ -1,0 +1,67 @@
+/* Dashboard container with flexbox */
+.dashboard-container {
+    display: flex;
+    height: 80vh;
+    margin-top: 10vh;
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .map-panel {
+    flex: 2;
+    background: white;
+    border-radius: 12px;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .map-panel h2 {
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  /* Map Container Styling */
+  .map-content {
+    flex-grow: 1;
+    border-radius: 10px;
+    height: 100%;
+    width: 100%;
+  }
+  
+  /* Notifications Panel */
+  .notifications-panel {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .notifications-panel h2 {
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  .notifications-panel ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .notifications-panel li {
+    background: #f8f9fa;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #444;
+    display: flex;
+    align-items: center;
+  }
+  
+  .notifications-panel li:hover {
+    background: #e9ecef;
+    cursor: pointer;
+  }
