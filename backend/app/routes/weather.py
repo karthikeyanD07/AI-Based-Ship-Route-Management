@@ -1,7 +1,7 @@
 """API routes for weather data."""
 from fastapi import APIRouter, HTTPException, Query, Request
-from backend.app.services.weather_service import weather_service
-from backend.app.middleware.rate_limit import limiter
+from app.services.weather_service import weather_service
+from app.middleware.rate_limit import limiter
 import logging
 
 logger = logging.getLogger(__name__)

@@ -2,10 +2,10 @@
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from typing import Optional
 import logging
-from backend.app.services.weather_service import weather_service
-from backend.app.middleware.per_user_rate_limit import per_user_limit
-from backend.app.auth.security import get_current_user
-from backend.app.utils.audit_logger import audit_logger
+from app.services.weather_service import weather_service
+from app.middleware.per_user_rate_limit import per_user_limit
+from app.auth.security import get_current_user
+from app.utils.audit_logger import audit_logger
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["weather-v1"])

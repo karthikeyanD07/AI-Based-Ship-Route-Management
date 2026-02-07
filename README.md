@@ -1,356 +1,174 @@
-# AI Ship Route Management System (NeoECDIS)
+# 🚢 NeoECDIS: AI-Based Ship Route Management System
 
-A comprehensive maritime navigation system providing real-time ship tracking, route optimization, and weather integration.
+> **A production-ready, physics-aware maritime decision support system.**
+>
+> *Operational Intelligence for the Next Generation of Fleet Management.*
 
-## 🚀 Features
+---
 
-- **Real-time Ship Tracking**: Track multiple vessels with live position updates via WebSocket
-- **Route Optimization**: AI-powered route planning between ports with ocean-safe paths and caching
-- **Weather Integration**: Real-time weather data and overlays for maritime conditions
-- **Interactive Maps**: Multiple map layers including nautical charts and weather overlays
-- **Modern UI**: Responsive React frontend with dark/light theme support
-- **Production-Ready**: Thread-safe, rate-limited, error-handled, with metrics and health checks
-- **Database Integration**: Optional PostgreSQL/PostGIS for data persistence
-- **WebSocket Support**: Real-time updates without polling overhead
-- **Comprehensive Monitoring**: Request tracking, metrics collection, and health checks
+## 📋 Table of Contents
+1. [Project Overview](#-project-overview)
+2. [Key Features](#-key-features)
+3. [Technology Stack](#-technology-stack)
+4. [Installation & Setup](#-installation--setup) (start here!)
+5. [Usage Guide](#-usage-guide)
+6. [Business & Future Roadmap](#-business--future-roadmap)
+7. [License](#-license)
 
-## 📋 Prerequisites
+---
 
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 14+ (optional, for database features)
-- OpenWeatherMap API key (for weather features)
+## 🎯 Project Overview
 
-## 🛠️ Installation
+NeoECDIS is a comprehensive maritime navigation platform designed to bridge the gap between static navigational charts and dynamic, operational decision-making. Unlike traditional ECDIS (Electronic Chart Display and Information Systems), NeoECDIS integrates **live traffic**, **weather intelligence**, and **economics-driven route optimization** into a single glass pane.
 
-### Backend Setup
+**Value Proposition:**
+- **For Captains:** Real-time situational awareness with weather overlays and traffic data.
+- **For Operators:** Cost-optimized routing that balances fuel consumption (CO₂) against time-to-arrival.
+- **For Developers:** A modern, API-first architecture built on Python/FastAPI and React.
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd AI-SHIP-ROUTE-MANAGEMENT
-   ```
+---
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   # Windows
-   venv\Scripts\activate
-   # Linux/Mac
-   source venv/bin/activate
-   ```
+## 🚀 Key Features
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+| Module | Feature | Capability |
+| :--- | :--- | :--- |
+| **Smart Navigator** | **Live Traffic Interaction** | Real-time map with moving ships, popup status (Speed, Course), and traffic density visualization. |
+| | **Weather Integration** | Visual overlays for wind, pressure, and wave height (OpenWeather integration). |
+| | **Tactical Planning** | "Click-to-Plan" allowing instant route generation from any map location. |
+| **Route Optimizer** | **Physics-Based Engine** | Calculates fuel burn using the **Cubic Law of Propulsion** ($v^3$) for accurate emission estimates. |
+| | **Multi-Strategy Routing** | Generates 3 comparison routes: **Fastest** (Time priority), **Balanced** (Efficiency), and **Greenest** (Lowest CO₂). |
+| | **Real-Time Savings** | Instantly displays projected FO consumption and CO₂ reduction (e.g., "Slowing by 2kts saves 15% fuel"). |
+| **Fleet Dashboard** | **Command Center** | Live counters for Active Fleet, Total Emissions, and Average Fleet Speed. |
+| | **Global Settings** | Configurable business logic (Fuel Prices per Ton, Default Cruising Speed) that persists across the application. |
 
-4. **Configure environment variables**
-   ```bash
-   # Copy .env.example to .env and fill in your values
-   cp .env.example .env
-   ```
+---
 
-   Edit `.env` with your configuration:
-   ```env
-   OPENWEATHER_API_KEY=your_api_key_here
-   DATABASE_URL=postgresql://user:password@localhost:5432/ship_route_db
-   CORS_ORIGINS=http://localhost:5173,http://localhost:3000
-   ```
+## 🛠 Technology Stack
 
-5. **Prepare data files**
-   - Place your AIS data CSV file in the root directory
-   - Default file: `final_ship_routes.csv` or `trip9.csv`
-   - Required columns: MMSI, lat (or Latitude), lon (or Longitude), sog (or Speed), cog (or Course), status
+### Backend (Python/FastAPI)
+- **FastAPI**: High-performance async API framework.
+- **Pydantic**: Strict data validation and settings management.
+- **Physics Engine**: Custom logic for hydrodynamic resistance and fuel curve modeling.
+- **Security**: Robust error handling, rigorous input validation, and secure headers.
+- **Testing**: Comprehensive functional tests (`connectivity_check.py`) and unit tests.
 
-6. **Run the backend**
-   ```bash
-   # Using uvicorn directly
-   uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
-   
-   # Or using FastAPI CLI
-   fastapi dev backend/app/main.py
-   ```
 
-   The API will be available at `http://127.0.0.1:8000`
-   API documentation: `http://127.0.0.1:8000/docs`
+### Frontend (React/Vite)
+- **Vite**: Next-gen frontend tooling.
+- **React 19**: Modern component architecture.
+- **Material UI (MUI)**: Professional, responsive design system (Tokyo Night theme).
+- **Leaflet/React-Leaflet**: Interactive mapping engine with custom layers.
 
-### Frontend Setup
+### System Architecture
 
-1. **Navigate to frontend directory**
-   ```bash
-   cd Vite_Frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   # Create .env file
-   cp .env.example .env
-   ```
-
-   Edit `.env`:
-   ```env
-   VITE_API_BASE_URL=http://127.0.0.1:8000
-   VITE_OPENWEATHER_API_KEY=your_openweather_api_key_here
-   ```
-
-4. **Run the frontend**
-   ```bash
-   npm run dev
-   ```
-
-   The frontend will be available at `http://localhost:5173`
-
-## 📁 Project Structure
-
-```
-AI-SHIP-ROUTE-MANAGEMENT/
-├── backend/
-│   └── app/
-│       ├── config/
-│       │   └── settings.py          # Configuration management
-│       ├── models/
-│       │   ├── schemas.py           # Pydantic models
-│       │   └── database.py          # SQLAlchemy models
-│       ├── routes/
-│       │   ├── ships.py             # Ship tracking endpoints
-│       │   ├── routes.py            # Route optimization endpoints
-│       │   ├── weather.py           # Weather endpoints
-│       │   └── health.py            # Health check endpoints
-│       ├── services/
-│       │   ├── ship_service.py      # Ship tracking logic
-│       │   ├── route_service.py     # Route optimization logic
-│       │   └── weather_service.py   # Weather integration
-│       ├── utils/
-│       │   ├── ocean_detection.py   # Land/water detection
-│       │   └── route_algorithms.py  # Route optimization algorithms
-│       └── main.py                  # FastAPI application entry
-├── Vite_Frontend/
-│   └── src/
-│       ├── assets/
-│       │   └── Components/          # React components
-│       ├── components/
-│       │   └── ErrorBoundary.jsx    # Error handling
-│       └── config.js                # Frontend configuration
-├── requirements.txt                 # Python dependencies
-├── .env.example                     # Environment variables template
-└── README.md                        # This file
+```mermaid
+graph TD
+    Client[Frontend (React/Vite)] -->|HTTP/REST| API[Backend API (FastAPI)]
+    Client -->|WebSocket| WS[Real-time Updates]
+    API -->|Read/Write| DB[(PostgreSQL + PostGIS)]
+    API -->|Fetch| Weather[OpenWeatherMap API]
+    API -->|Calc| Physics[Physics Engine (v^3 Law)]
+    WS -->|Push| Client
 ```
 
-## 🔌 API Endpoints
+### Key Data Flows
+1.  **Ship Tracking**: Backend loads CSV -> Service updates positions (in-memory) -> Frontend polls/subscribes -> Map updates.
+2.  **Route Optimization**: User Input -> API Request -> Ocean Detection (Land Mask) -> Pathfinding (A*) -> Physics Engine -> Response.
 
-### Ship Tracking
 
-- `GET /api/ship-traffic` - Get all tracked ships with pagination
-  - Query params: 
-    - `limit` (optional, 1-1000) - Maximum ships to return
-    - `offset` (optional, default: 0) - Number of ships to skip
-  - Response includes: `ships`, `total`, `limit`, `offset`, `has_more`
-- `GET /api/ship/{mmsi}` - Get specific ship by MMSI
-- `WS /ws/ship-updates` - WebSocket endpoint for real-time ship position updates
+---
 
-### Route Optimization
+## 📦 Installation & Setup
 
-- `POST /api/get_optimized_route/` - Optimize route between ports (rate-limited, cached)
-  ```json
-  {
-    "ship_id": "123456789",
-    "start": "Port A",
-    "end": "Port B"
-  }
-  ```
-  Response includes route points, distance, and estimated time.
-  Routes are cached for 1 hour to improve performance.
+### Prerequisites
+- **Python 3.10+**
+- **Node.js 18+** & npm
+- **Git**
 
-### Weather
-
-- `GET /api/weather?lat={latitude}&lon={longitude}` - Get weather at location
-
-### Health & Monitoring
-
-- `GET /health` - Basic health check
-- `GET /health/detailed` - Detailed health check with dependency status
-- `GET /metrics` - Application metrics (counters, timers, gauges)
-- `GET /` - API information
-
-### Rate Limiting
-
-All endpoints are rate-limited:
-- Ship endpoints: 60 requests/minute
-- Route optimization: 30 requests/minute
-- Weather: 60 requests/minute
-
-## 🔧 Configuration
-
-### Backend Configuration
-
-All configuration is managed through environment variables (see `.env.example`):
-
-- `HOST`, `PORT`: Server binding
-- `CORS_ORIGINS`: Allowed frontend origins
-- `DATABASE_URL`: PostgreSQL connection string
-- `OPENWEATHER_API_KEY`: Weather API key
-- `MAX_SHIPS_DISPLAY`: Maximum ships to track
-- `SHIP_UPDATE_INTERVAL`: Ship position update interval (seconds)
-
-### Frontend Configuration
-
-- `VITE_API_BASE_URL`: Backend API URL
-- `VITE_OPENWEATHER_API_KEY`: Weather API key (for map overlays)
-
-## 🗄️ Database (Optional)
-
-The system includes database models for persistence. To use:
-
-1. **Install PostgreSQL with PostGIS**
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install postgresql postgis
-   
-   # macOS
-   brew install postgresql postgis
-   ```
-
-2. **Create database**
-   ```sql
-   CREATE DATABASE ship_route_db;
-   \c ship_route_db
-   CREATE EXTENSION postgis;
-   ```
-
-3. **Initialize tables**
-   ```python
-   from backend.app.models.database import init_db
-   init_db()
-   ```
-
-## 🧪 Development
-
-### Running in Development Mode
-
-Backend:
+### 1. Backend Setup
 ```bash
-# Using uvicorn directly
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+# Clone the repository
+git clone https://github.com/karthikeyanD07/AI-Based-Ship-Route-Management.git
+cd AI-Based-Ship-Route-Management
 
-# Or using the provided script
+# Create Virtual Environment
 # Windows:
-run_backend.bat
-# Linux/Mac:
-./run_backend.sh
+python -m venv venv
+venv\Scripts\activate
+# Mac/Linux:
+# python3 -m venv venv && source venv/bin/activate
+
+# Install Dependencies
+pip install -r requirements.txt
 ```
 
-Frontend:
+### 2. Frontend Setup
+```bash
+cd Vite_Frontend
+npm install
+cd ..
+```
+
+### 3. Environment Configuration
+Create a `.env` file in the root directory (optional, defaults provided in safe mode):
+```env
+OPENWEATHER_API_KEY=your_key_here
+```
+
+### 4. Running the Application
+**Terminal 1 (Backend):**
+```bash
+venv\Scripts\activate
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Terminal 2 (Frontend):**
 ```bash
 cd Vite_Frontend
 npm run dev
 ```
 
-### Key Improvements Implemented
+> **Access the App:**
+> *   Frontend: `http://localhost:5173`
+> *   API Docs: `http://localhost:8000/docs`
 
-**Critical Fixes:**
-- ✅ Thread-safe ship position updates (no race conditions)
-- ✅ Memory-efficient CSV loading with size limits and chunking
-- ✅ Database integration for data persistence
-- ✅ Production-safe error handling (no stack trace leaks)
-- ✅ Rate limiting on all endpoints
+---
 
-**High Priority:**
-- ✅ WebSocket support for real-time updates (replaces polling)
-- ✅ Improved ocean detection with better heuristics
-- ✅ Async optimization using thread pools
-- ✅ HTTP connection pooling for external APIs
-- ✅ Pagination support for ship list endpoint
+## 🎮 Usage Guide
 
-**Medium Priority:**
-- ✅ Request ID tracking for correlation
-- ✅ Comprehensive health checks
-- ✅ Exponential backoff retry logic in frontend
-- ✅ Response compression (gzip)
-- ✅ Route calculation caching
+### The "Captain's Workflow"
+1.  **Monitor**: Start at the **Dashboard** to see fleet status.
+2.  **Discover**: Switch to **Map** (Navigator) to view live traffic and weather. Click any ship to inspect it.
+3.  **Plan**: Click "Plan Route" on the map or go to **Routes**.
+4.  **Optimize**: Select *Start Port* (Singapore) and *End Port* (Rotterdam). Click **Compare Routes**.
+5.  **Decide**: Review the comparison table. Note how the "Balanced" route creates massive savings vs the "Fastest" route.
+6.  **Configure**: Go to **Settings** to update Fuel Prices (HFO/MGO) and see the recalculations update instantly.
 
-**Nice to Have:**
-- ✅ Metrics collection endpoint
-- ✅ Magic numbers documented
-- ✅ Request size validation
-- ✅ Backpressure handling for background tasks
+---
 
-### Code Structure
+## 💼 Business & Future Roadmap
 
-- **Backend**: Follows FastAPI best practices with separation of concerns
-  - Routes: API endpoints
-  - Services: Business logic
-  - Models: Data validation and database models
-  - Utils: Reusable utilities
+**Current Status:** Candidate Release (Stable Prototype)
 
-- **Frontend**: React with functional components
-  - Components: Reusable UI components
-  - Error boundaries: Graceful error handling
-  - Configuration: Environment-based config
+### Strategic Gaps & Opportunities
+While technically robust, the system currently operates as a standalone tool. The roadmap focuses on bridging the gap to commercial viability:
 
-## 🔒 Security
+1.  **Monetization Strategy**: Transition to a Freemium SaaS model for SMB maritime operators (yachts, fishing fleets).
+2.  **Enterprise Features**: Multi-tenancy, Role-Based Access Control (RBAC), and Audit Logging.
+3.  **Regulatory Compliance**: Roadmap to support IHO S-57/S-63 chart standards for official navigation use.
 
-- **API keys**: Stored in environment variables (never commit to git)
-- **CORS**: Configured for specific origins (not wildcard in production)
-- **Input validation**: Pydantic models with coordinate range validation
-- **Rate limiting**: Implemented on all endpoints (configurable per endpoint)
-- **Error handling**: No stack traces leaked in production mode
-- **Request size limits**: 10MB maximum request body size
-- **Request ID tracking**: All requests have correlation IDs for tracing
+### Upcoming Features
+*   **Voyage Simulation**: 1000x speed replay of planned routes.
+*   **AI Captain Assistant**: Chat-based interface for route explanation ("Why avoid the Red Sea?").
+*   **Offline Mode**: Essential for vessels with intermittent satellite connectivity.
 
-## 🐛 Troubleshooting
+---
 
-### Backend won't start
-- Check if port 8000 is available
-- Verify CSV data file exists (app will start with empty ship list if missing)
-- Check environment variables are set
-- Check logs for initialization errors
-- Review `/health/detailed` endpoint for dependency status
+## 📄 License
 
-### Frontend can't connect to backend
-- Verify `VITE_API_BASE_URL` matches backend URL
-- Check CORS settings in backend
-- Ensure backend is running
-- Check browser console for WebSocket connection errors (falls back to polling)
+This project is licensed for educational and demonstration purposes.
+*   **AIS Data**: Simulated/Demo data (or live via API if configured).
+*   **Charts**: OpenSeaMap (OpenStreetMap contributors).
 
-### Ships not appearing
-- Verify CSV file has correct column names
-- Check ship positions are in valid ocean coordinates
-- Review backend logs for initialization errors
-- Check that CSV file is in the root directory
-- Verify MAX_SHIPS_DISPLAY setting in .env
-- Check WebSocket connection status (should see "WebSocket connected" in console)
-
-### Weather not working
-- Verify OpenWeatherMap API key is set in `.env`
-- Check API key has sufficient quota
-- Review backend logs for API errors
-- Check `/health/detailed` for weather service status
-
-### Performance Issues
-- Check `/metrics` endpoint for request timings
-- Verify rate limits aren't being hit (check response headers)
-- Review database connection if using persistence
-- Check CSV file size (large files use chunked loading)
-
-### Rate Limiting
-- If getting 429 errors, reduce request frequency
-- Check rate limit headers in responses: `X-RateLimit-Limit`, `X-RateLimit-Remaining`
-- Adjust `RATE_LIMIT_PER_MINUTE` in `.env` if needed
-
-## 📝 License
-
-[Add your license here]
-
-## 🤝 Contributing
-
-[Add contribution guidelines here]
-
-## 📧 Contact
-
-[Add contact information here]
+---
+*Built with ❤️ by the NeoECDIS Team*

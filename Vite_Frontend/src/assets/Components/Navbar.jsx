@@ -58,7 +58,7 @@ const Navbar = () => {
                 <span>Captain’s Dashboard</span>
               </li>
             </Link>
-            <Link to="/map">
+            <Link to="/navigation">
               <li>
                 <MapIcon />
                 <span>Smart Navigator</span>
@@ -68,12 +68,6 @@ const Navbar = () => {
               <li>
                 <AltRouteIcon />
                 <span>Routes</span>
-              </li>
-            </Link>
-            <Link to="/weather">
-              <li>
-                <ThunderstormIcon />
-                <span>Sea Conditions</span>
               </li>
             </Link>
           </ul>
@@ -87,7 +81,8 @@ const Navbar = () => {
             <button className="profile-btn" onClick={toggleTheme}>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</button>
             <div className="profile-links">
               <Link to="/routes">Plan Route</Link>
-              <Link to="/map">Live Map</Link>
+              <Link to="/navigation">Live Map</Link>
+              <Link to="/settings">Settings</Link>
             </div>
           </div>
         )}

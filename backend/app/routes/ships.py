@@ -2,9 +2,9 @@
 from fastapi import APIRouter, HTTPException, Query, Request
 from typing import Optional
 import logging
-from backend.app.services.ship_service import ship_service
-from backend.app.models.schemas import ShipTrafficResponse, ShipPosition
-from backend.app.middleware.rate_limit import limiter
+from app.services.ship_service import ship_service
+from app.models.schemas import ShipTrafficResponse, ShipPosition
+from app.middleware.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 

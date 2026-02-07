@@ -6,7 +6,7 @@ from geoalchemy2 import Geometry
 from datetime import datetime
 from contextlib import contextmanager
 from typing import Generator
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 Base = declarative_base()
 

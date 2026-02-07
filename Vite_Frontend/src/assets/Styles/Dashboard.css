@@ -1,67 +1,198 @@
-/* Dashboard container with flexbox */
+/* Dashboard.css - Tokyo Night Professional Theme */
+.dashboard-body {
+  background-color: #1a1b26;
+  min-height: 100vh;
+  color: #a9b1d6;
+  font-family: 'Inter', sans-serif;
+}
+
 .dashboard-container {
-    display: flex;
-    height: 80vh;
-    margin-top: 10vh;
-    padding: 20px;
-    gap: 20px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+  padding-top: 100px;
+  /* Space for fixed navbar */
+}
+
+/* Header Section */
+.dashboard-header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dashboard-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #e0af68;
+  /* Tokyo Night Yellow */
+  letter-spacing: 0.5px;
+}
+
+.last-updated {
+  font-size: 14px;
+  color: #565f89;
+}
+
+/* Metrics Grid - Top Row */
+.metrics-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: #1f2335;
+  border: 1px solid #292e42;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: #3b4261;
+}
+
+.metric-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #7aa2f7;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #c0caf5;
+}
+
+.metric-sub {
+  font-size: 12px;
+  color: #9ece6a;
+  /* Green */
+  margin-top: 4px;
+}
+
+/* Sidebar - Fleet List */
+.fleet-panel {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+  background: #1f2335;
+  border: 1px solid #292e42;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #292e42;
+  background: #24283b;
+  font-weight: 600;
+  color: #bb9af7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fleet-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.fleet-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid #292e42;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.fleet-item:hover {
+  background: #292e42;
+}
+
+.ship-name {
+  font-weight: 600;
+  color: #c0caf5;
+  font-size: 14px;
+}
+
+.ship-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #565f89;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(158, 206, 106, 0.2);
+  color: #9ece6a;
+}
+
+/* Map Panel */
+.map-panel {
+  grid-column: 2 / -1;
+  grid-row: 3 / 4;
+  background: #1f2335;
+  border: 1px solid #292e42;
+  border-radius: 12px;
+  overflow: hidden;
+  height: 600px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.map-content {
+  height: 100%;
+  width: 100%;
+  background: #1a1b26;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-container {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fleet-panel {
+    max-height: 300px;
+    grid-column: 1 / -1;
   }
 
   .map-panel {
-    flex: 2;
-    background: white;
-    border-radius: 12px;
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+    grid-column: 1 / -1;
+    height: 400px;
   }
-  
-  .map-panel h2 {
-    color: #333;
-    margin-bottom: 10px;
-  }
-  
-  /* Map Container Styling */
-  .map-content {
-    flex-grow: 1;
-    border-radius: 10px;
-    height: 100%;
-    width: 100%;
-  }
-  
-  /* Notifications Panel */
-  .notifications-panel {
-    flex: 1;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    overflow-y: auto;
-  }
-  
-  .notifications-panel h2 {
-    color: #333;
-    margin-bottom: 15px;
-  }
-  
-  .notifications-panel ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .notifications-panel li {
-    background: #f8f9fa;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    font-size: 16px;
-    color: #444;
-    display: flex;
-    align-items: center;
-  }
-  
-  .notifications-panel li:hover {
-    background: #e9ecef;
-    cursor: pointer;
-  }
+}

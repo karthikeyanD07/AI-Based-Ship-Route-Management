@@ -2,8 +2,8 @@
 import logging
 from typing import Callable, Any, Optional
 from functools import wraps
-from backend.app.services.db_service import db_service
-from backend.app.services.weather_service import weather_service
+from app.services.db_service import db_service
+from app.services.weather_service import weather_service
 
 logger = logging.getLogger(__name__)
 

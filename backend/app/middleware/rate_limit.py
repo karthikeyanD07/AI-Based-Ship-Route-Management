@@ -2,7 +2,7 @@
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 # Initialize rate limiter
 limiter = Limiter(

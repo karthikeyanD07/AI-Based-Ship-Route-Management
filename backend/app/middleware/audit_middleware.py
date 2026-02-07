@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from starlette.requests import Request
 from starlette.responses import Response
-from backend.app.utils.audit_logger import audit_logger
+from app.utils.audit_logger import audit_logger
 import logging
 
 logger = logging.getLogger(__name__)

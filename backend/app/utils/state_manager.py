@@ -2,7 +2,7 @@
 import logging
 from typing import Optional, Dict, Any
 import json
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

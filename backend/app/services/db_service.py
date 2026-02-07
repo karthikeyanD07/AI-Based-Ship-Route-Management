@@ -3,10 +3,10 @@ import logging
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from backend.app.models.database import Ship, Route, get_db_session, init_db
-from backend.app.models.schemas import ShipPosition
-from backend.app.config.settings import settings
-from backend.app.utils.db_retry import retry_db_operation
+from app.models.database import Ship, Route, get_db_session, init_db
+from app.models.schemas import ShipPosition
+from app.config.settings import settings
+from app.utils.db_retry import retry_db_operation
 
 logger = logging.getLogger(__name__)
 

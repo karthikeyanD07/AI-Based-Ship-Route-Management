@@ -2,16 +2,16 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from backend.app.models.database import User, get_db
-from backend.app.auth.security import (
+from app.models.database import User, get_db
+from app.auth.security import (
     verify_password,
     get_password_hash,
     create_access_token,
     require_auth
 )
-from backend.app.auth.models import UserCreate, UserLogin, Token, UserResponse
-from backend.app.config.settings import settings
-from backend.app.utils.audit_logger import audit_logger
+from app.auth.models import UserCreate, UserLogin, Token, UserResponse
+from app.config.settings import settings
+from app.utils.audit_logger import audit_logger
 import logging
 import json
 

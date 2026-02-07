@@ -15,8 +15,9 @@ numpy==2.1.3
 
 # GIS and Spatial
 shapely==2.0.5
-geopandas==0.15.2
+geopandas==1.1.2
 geopy==2.4.1
+pyproj==3.7.0
 
 # Security
 python-jose[cryptography]==3.3.0

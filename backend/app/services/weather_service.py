@@ -2,8 +2,8 @@
 import httpx
 import logging
 from typing import Dict, Optional
-from backend.app.config.settings import settings
-from backend.app.utils.circuit_breaker import CircuitBreaker
+from app.config.settings import settings
+from app.utils.circuit_breaker import CircuitBreaker
 
 logger = logging.getLogger(__name__)
 

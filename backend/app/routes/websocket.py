@@ -5,9 +5,9 @@ import logging
 import json
 from typing import List, Set, Optional
 from threading import Lock
-from backend.app.services.ship_service import ship_service
-from backend.app.config.settings import settings
-from backend.app.utils.message_queue import message_queue
+from app.services.ship_service import ship_service
+from app.config.settings import settings
+from app.utils.message_queue import message_queue
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ws", tags=["websocket"])

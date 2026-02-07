@@ -3,7 +3,7 @@ import logging
 import sys
 import json
 from pythonjsonlogger import jsonlogger
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 
 class StructuredFormatter(jsonlogger.JsonFormatter):

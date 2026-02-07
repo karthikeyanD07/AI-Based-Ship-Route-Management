@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer
-from backend.app.config.settings import settings
+from app.config.settings import settings
 import logging
 
 logger = logging.getLogger(__name__)

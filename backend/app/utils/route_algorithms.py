@@ -3,7 +3,7 @@ import math
 import logging
 from typing import List, Tuple, Optional
 from heapq import heappush, heappop
-from backend.app.utils.ocean_detection import ocean_detector
+from app.utils.ocean_detection import ocean_detector
 from geopy.distance import geodesic
 
 logger = logging.getLogger(__name__)

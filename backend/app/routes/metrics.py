@@ -1,7 +1,7 @@
 """Metrics endpoint."""
 from fastapi import APIRouter
-from backend.app.utils.metrics import metrics
-from backend.app.utils.monitoring import get_system_metrics
+from app.utils.metrics import metrics
+from app.utils.monitoring import get_system_metrics
 from prometheus_client import generate_latest
 from starlette.responses import Response
 

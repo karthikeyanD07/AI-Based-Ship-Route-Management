@@ -9,10 +9,10 @@ from typing import Dict, List, Optional
 from pathlib import Path
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
-from backend.app.config.settings import settings
-from backend.app.models.schemas import ShipPosition
-from backend.app.utils.ocean_detection import ocean_detector
-from backend.app.services.db_service import db_service
+from app.config.settings import settings
+from app.models.schemas import ShipPosition
+from app.utils.ocean_detection import ocean_detector
+from app.services.db_service import db_service
 # Removed get_db import - using db_service methods directly
 
 logger = logging.getLogger(__name__)

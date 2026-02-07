@@ -2,9 +2,9 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
 import logging
-from backend.app.services.db_service import db_service
-from backend.app.services.weather_service import weather_service
-from backend.app.config.settings import settings
+from app.services.db_service import db_service
+from app.services.weather_service import weather_service
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
@@ -35,7 +35,7 @@ async def detailed_health_check():
         db_available = db_service.is_available()
         if db_available:
             # Actually test the connection
-            from backend.app.models.database import get_db_session
+            from app.models.database import get_db_session
             from sqlalchemy import text
             try:
                 with get_db_session() as db:

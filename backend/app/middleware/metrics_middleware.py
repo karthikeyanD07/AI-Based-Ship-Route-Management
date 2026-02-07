@@ -2,7 +2,7 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 import time
-from backend.app.utils.metrics import metrics
+from app.utils.metrics import metrics
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):

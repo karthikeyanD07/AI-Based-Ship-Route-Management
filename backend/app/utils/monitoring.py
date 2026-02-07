@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any
 from datetime import datetime, timedelta
 from collections import defaultdict, deque
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +64,10 @@ alert_manager = AlertManager()
 def get_system_metrics() -> Dict[str, Any]:
     """Get current system metrics."""
     try:
-        from backend.app.services.ship_service import ship_service
-        from backend.app.routes.websocket import manager as ws_manager
-        from backend.app.services.db_service import db_service
-        from backend.app.services.weather_service import weather_service
+        from app.services.ship_service import ship_service
+        from app.routes.websocket import manager as ws_manager
+        from app.services.db_service import db_service
+        from app.services.weather_service import weather_service
         
         # Get WebSocket connection count (thread-safe)
         ws_count = 0

@@ -4,8 +4,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from typing import Callable, Optional
 from fastapi import Request
-from backend.app.auth.security import get_current_user
-from backend.app.config.settings import settings
+from app.auth.security import get_current_user
+from app.config.settings import settings
 import logging
 
 logger = logging.getLogger(__name__)

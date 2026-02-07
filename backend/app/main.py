@@ -7,26 +7,26 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import asyncio
 import logging
 
-from backend.app.config.settings import settings
-from backend.app.routes import ships, routes, health, weather, websocket, auth
-from backend.app.routes.v1 import ships as ships_v1, routes as routes_v1, weather as weather_v1
-from backend.app.routes.websocket import manager as websocket_manager
-from backend.app.middleware.rate_limit import limiter
-from backend.app.middleware.error_handler import error_handler, validation_error_handler
-from backend.app.middleware.request_id import RequestIDMiddleware
-from backend.app.middleware.security_headers import SecurityHeadersMiddleware
-from backend.app.middleware.input_sanitizer import InputSanitizerMiddleware
-from backend.app.middleware.audit_middleware import AuditMiddleware
-from backend.app.middleware.user_context import UserContextMiddleware
-from backend.app.services.weather_service import weather_service
-from backend.app.utils.structured_logging import setup_structured_logging
+from app.config.settings import settings
+from app.routes import ships, routes, health, weather, websocket, auth
+from app.routes.v1 import ships as ships_v1, routes as routes_v1, weather as weather_v1
+from app.routes.websocket import manager as websocket_manager
+from app.middleware.rate_limit import limiter
+from app.middleware.error_handler import error_handler, validation_error_handler
+from app.middleware.request_id import RequestIDMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.middleware.input_sanitizer import InputSanitizerMiddleware
+from app.middleware.audit_middleware import AuditMiddleware
+from app.middleware.user_context import UserContextMiddleware
+from app.services.weather_service import weather_service
+from app.utils.structured_logging import setup_structured_logging
 
 # Setup structured logging
 setup_structured_logging()
 logger = logging.getLogger(__name__)
 
 # Import ship_service after logging is configured
-from backend.app.services.ship_service import ship_service
+from app.services.ship_service import ship_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -86,7 +86,7 @@ async def startup_event():
     logger.info("Starting AI Ship Route Management API")
     
     # Start message queue
-    from backend.app.utils.message_queue import message_queue
+    from app.utils.message_queue import message_queue
     message_queue.start()
     
     # Start background task for ship position updates
@@ -107,5 +107,5 @@ async def shutdown_event():
     await websocket_manager.close_all()  # Close all WebSocket connections gracefully
     
     # Stop message queue
-    from backend.app.utils.message_queue import message_queue
+    from app.utils.message_queue import message_queue
     await message_queue.stop()

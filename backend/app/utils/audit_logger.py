@@ -4,8 +4,8 @@ import json
 from typing import Optional, Dict, Any
 from datetime import datetime
 from fastapi import Request
-from backend.app.services.db_service import db_service
-from backend.app.models.database import AuditLog, get_db_session
+from app.services.db_service import db_service
+from app.models.database import AuditLog, get_db_session
 
 logger = logging.getLogger(__name__)
 
