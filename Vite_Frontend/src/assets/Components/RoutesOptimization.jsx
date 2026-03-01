@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet";
-import { Autocomplete, TextField } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 import axios from "axios";
 import L from "leaflet";
+import DirectionsBoat from "@mui/icons-material/DirectionsBoat";
+import AccessTime from "@mui/icons-material/AccessTime";
+import Opacity from "@mui/icons-material/Opacity";
+import Public from "@mui/icons-material/Public";
+import MapIcon from "@mui/icons-material/Map";
+import WaterDrop from "@mui/icons-material/WaterDrop";
+import NatureIcon from "@mui/icons-material/Nature";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import SettingsIcon from "@mui/icons-material/Settings";
 import "../Styles/Routes.css";
 import { API_BASE_URL } from "../../config";
 
@@ -40,10 +50,17 @@ const ShipMarker = ({ routePositions, color }) => {
     <Marker
       position={position}
       icon={L.divIcon({
-        className: 'ship-icon',
-        html: `<div class="ship-marker-inner" style="font-size: 24px; color: ${color}; text-shadow: 0 0 5px ${color};">🚢</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
+        className: 'custom-ship-marker',
+        html: `
+          <div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px ${color}99, inset 0 0 6px rgba(0,0,0,0.5); border: 2px solid #fff; transition: all 0.3s ease;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" style="transform: rotate(-45deg);">
+              <path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.47.26-.6.5s-.15.52-.06.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/>
+            </svg>
+          </div>
+        `,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -14]
       })}
     >
       <Popup>Simulated Vessel Position</Popup>
@@ -55,8 +72,6 @@ const RoutesOptimization = () => {
   // Form State
   const [mmsi, setMmsi] = useState("235123456");
   const [ports, setPorts] = useState([]);
-  const [filteredPortsStart, setFilteredPortsStart] = useState([]);
-  const [filteredPortsEnd, setFilteredPortsEnd] = useState([]);
   const [startPort, setStartPort] = useState("");
   const [endPort, setEndPort] = useState("");
   const [startSearch, setStartSearch] = useState("");
@@ -91,36 +106,12 @@ const RoutesOptimization = () => {
     setWeatherData(null);
   }, [startPort, endPort]);
 
-  // Filter ports for start
-  useEffect(() => {
-    if (startSearch) {
-      const filtered = ports.filter(port =>
-        port.toLowerCase().includes(startSearch.toLowerCase())
-      );
-      setFilteredPortsStart(filtered);
-    } else {
-      setFilteredPortsStart(ports);
-    }
-  }, [startSearch, ports]);
 
-  // Filter ports for end
-  useEffect(() => {
-    if (endSearch) {
-      const filtered = ports.filter(port =>
-        port.toLowerCase().includes(endSearch.toLowerCase())
-      );
-      setFilteredPortsEnd(filtered);
-    } else {
-      setFilteredPortsEnd(ports);
-    }
-  }, [endSearch, ports]);
 
   const fetchPorts = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/ports/all`);
       setPorts(response.data.ports);
-      setFilteredPortsStart(response.data.ports);
-      setFilteredPortsEnd(response.data.ports);
 
       // Linus Patch: Check for "Click-to-Plan" params
       const params = new URLSearchParams(window.location.search);
@@ -253,7 +244,10 @@ const RoutesOptimization = () => {
     <div className="app-container">
       {/* Header */}
       <header className="app-header">
-        <h1>⚓ NeoECDIS Maritime Intelligence</h1>
+        <h1>
+          <DirectionsBoat sx={{ color: 'var(--tn-blue)', fontSize: 28 }} />
+          NeoECDIS Maritime Intelligence
+        </h1>
       </header>
 
       <div className="main-layout">
@@ -342,7 +336,7 @@ const RoutesOptimization = () => {
           </div>
 
           <details className="advanced-settings">
-            <summary>⚙️ Vessel Configuration</summary>
+            <summary><SettingsIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1, color: 'var(--tn-blue)' }} /> Configuration</summary>
 
             <div className="form-group">
               <label>Vessel Type</label>
@@ -391,7 +385,7 @@ const RoutesOptimization = () => {
 
         {/* Main Content */}
         <main className="content">
-          {error && <div className="error">⚠️ {error}</div>}
+          {error && <div className="error"><SettingsIcon sx={{ fontSize: 18, mr: 1 }} /> {error}</div>}
 
           {/* Tabs */}
           <nav className="tabs">
@@ -456,7 +450,7 @@ const RoutesOptimization = () => {
 
                         <div className="metrics-grid">
                           <div className="metric">
-                            <div className="metric-icon">📍</div>
+                            <div className="metric-icon"><MapIcon sx={{ color: 'var(--tn-blue)' }} /></div>
                             <div className="metric-data">
                               <span className="metric-value">{route.distance_km.toLocaleString()}</span>
                               <span className="metric-unit">km</span>
@@ -464,7 +458,7 @@ const RoutesOptimization = () => {
                           </div>
 
                           <div className="metric">
-                            <div className="metric-icon">⏱️</div>
+                            <div className="metric-icon"><AccessTime sx={{ color: 'var(--tn-purple)' }} /></div>
                             <div className="metric-data">
                               <span className="metric-value">{route.estimated_time_days}</span>
                               <span className="metric-unit">days</span>
@@ -472,25 +466,25 @@ const RoutesOptimization = () => {
                           </div>
 
                           <div className="metric">
-                            <div className="metric-icon">🌍</div>
+                            <div className="metric-icon"><Public sx={{ color: 'var(--tn-green)' }} /></div>
                             <div className="metric-data">
                               <span className="metric-value">{route.total_co2_tonnes}</span>
-                              <span className="metric-unit">tonnes CO₂</span>
+                              <span className="metric-icon"><NatureIcon fontSize="small" /></span>
                             </div>
                           </div>
 
                           <div className="metric">
-                            <div className="metric-icon">⛽</div>
+                            <div className="metric-icon"><Opacity sx={{ color: 'var(--tn-yellow)' }} /></div>
                             <div className="metric-data">
                               <span className="metric-value">{route.fuel_tonnes}</span>
-                              <span className="metric-unit">tonnes fuel</span>
+                              <span className="metric-icon"><MonetizationOnIcon fontSize="small" /></span>
                             </div>
                           </div>
                         </div>
 
                         {route.co2_savings_tonnes > 0 && (
                           <div className="savings-badge">
-                            💚 Saves {route.co2_savings_tonnes}t CO₂ ({route.co2_savings_percent}%)
+                            <NatureIcon sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'text-bottom' }} /> Saves {route.co2_savings_tonnes}t CO₂ ({route.co2_savings_percent}%)
                           </div>
                         )}
                       </div>
@@ -498,7 +492,7 @@ const RoutesOptimization = () => {
                   </div>
 
                   <div className="recommendation">
-                    📊 {comparisonData.recommendation}
+                    <DirectionsBoat sx={{ mr: 1, verticalAlign: 'middle' }} /> {comparisonData.recommendation}
                   </div>
 
                   <div className="map-container">
@@ -517,8 +511,11 @@ const RoutesOptimization = () => {
                           key={route.route_name}
                           positions={route.route_points}
                           color={route.color}
-                          weight={3}
-                          opacity={0.9}
+                          weight={4}
+                          opacity={0.8}
+                          lineCap="round"
+                          lineJoin="round"
+                          className="animated-route-line"
                         />
                       ))}
 
@@ -534,7 +531,7 @@ const RoutesOptimization = () => {
                 </>
               ) : (
                 <div className="empty-state">
-                  <h3>🗺️ No routes to display</h3>
+                  <h3><MapIcon sx={{ fontSize: 24, mr: 1, verticalAlign: 'middle', color: 'var(--tn-text-muted)' }} /> No routes to display</h3>
                   <p>Select departure and arrival ports, then click "Compare Routes"</p>
                 </div>
               )}
@@ -608,7 +605,7 @@ const RoutesOptimization = () => {
                 </>
               ) : (
                 <div className="empty-state">
-                  <h3>📊 No emissions data</h3>
+                  <h3><Public sx={{ fontSize: 24, mr: 1, verticalAlign: 'middle', color: 'var(--tn-text-muted)' }} /> No emissions data</h3>
                   <p>Compare routes first, then click "Emissions" tab</p>
                 </div>
               )}
@@ -637,7 +634,9 @@ const RoutesOptimization = () => {
                     </div>
                   </div>
 
-                  <h3 style={{ color: 'var(--tn-text)', margin: '32px 0 16px' }}>🌦️ Weather Segments</h3>
+                  <h3 style={{ color: 'var(--tn-text)', margin: '32px 0 16px', display: 'flex', alignItems: 'center' }}>
+                    <WaterDrop sx={{ mr: 1, color: 'var(--tn-cyan)' }} /> Weather Segments
+                  </h3>
                   <div className="weather-segments">
                     {weatherData.segments.map(segment => (
                       <div key={segment.segment} className="segment-card">
@@ -714,7 +713,7 @@ const RoutesOptimization = () => {
                 </>
               ) : (
                 <div className="empty-state">
-                  <h3>🌦️ No weather data</h3>
+                  <h3><WaterDrop sx={{ fontSize: 24, mr: 1, verticalAlign: 'middle', color: 'var(--tn-text-muted)' }} /> No weather data</h3>
                   <p>Select ports and click "Weather Routing" to see weather-optimized route</p>
                 </div>
               )}

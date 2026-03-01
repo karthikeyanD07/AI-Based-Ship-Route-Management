@@ -47,6 +47,7 @@ const Settings = () => {
             setMessage("Settings saved successfully!");
             setTimeout(() => setMessage(null), 3000);
         } catch (err) {
+            console.error("Failed to save settings:", err);
             setMessage("Failed to save settings.");
         }
     };

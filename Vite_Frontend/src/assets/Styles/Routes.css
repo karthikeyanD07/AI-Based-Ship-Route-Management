@@ -1,31 +1,33 @@
-/* Tokyo Night Professional Maritime UI */
+/* NeoECDIS Premium Maritime Dashboard Style */
 
 :root {
-  /* Tokyo Night Color Palette */
-  --tn-bg: #1a1b26;
-  --tn-bg-dark: #16161e;
-  --tn-surface: #24283b;
-  --tn-surface-light: #292e42;
-  --tn-border: #414868;
+  /* Ocean Deep Color Palette */
+  --tn-bg: #0B1121;
+  --tn-bg-dark: #070B15;
+  --tn-surface: rgba(15, 23, 42, 0.65);
+  /* Glass base */
+  --tn-surface-light: rgba(30, 41, 59, 0.85);
+  --tn-border: rgba(148, 163, 184, 0.15);
+  --tn-border-glow: rgba(56, 189, 248, 0.3);
 
-  --tn-blue: #7aa2f7;
-  --tn-blue-bright: #89b4fa;
-  --tn-purple: #bb9af7;
-  --tn-cyan: #7dcfff;
-  --tn-green: #9ece6a;
-  --tn-yellow: #e0af68;
-  --tn-red: #f7768e;
-  --tn-orange: #ff9e64;
+  --tn-blue: #38BDF8;
+  --tn-blue-bright: #7DD3FC;
+  --tn-purple: #C084FC;
+  --tn-cyan: #22D3EE;
+  --tn-green: #34D399;
+  --tn-yellow: #FBBF24;
+  --tn-red: #F43F5E;
+  --tn-orange: #FB923C;
 
-  --tn-text: #c0caf5;
-  --tn-text-dark: #a9b1d6;
-  --tn-text-muted: #565f89;
-  --tn-text-dim: #414868;
+  --tn-text: #F8FAFC;
+  --tn-text-dark: #CBD5E1;
+  --tn-text-muted: #94A3B8;
+  --tn-text-dim: #475569;
 
   /* Route Colors */
-  --route-fastest: #f7768e;
-  --route-balanced: #7dcfff;
-  --route-greenest: #9ece6a;
+  --route-fastest: #F43F5E;
+  --route-balanced: #38BDF8;
+  --route-greenest: #34D399;
 }
 
 * {
@@ -36,7 +38,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--tn-bg);
+  background: radial-gradient(circle at 50% 0%, #152238 0%, var(--tn-bg) 100%);
   color: var(--tn-text);
   line-height: 1.6;
 }
@@ -50,16 +52,22 @@ body {
 
 /* Header */
 .app-header {
-  background: var(--tn-bg-dark);
+  background: rgba(7, 11, 21, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 16px 32px;
   border-bottom: 1px solid var(--tn-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
 }
 
 .app-header h1 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--tn-blue);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--tn-text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
 }
 
@@ -610,8 +618,29 @@ body {
 .ship-marker-inner {
   font-size: 24px;
   line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-  transition: transform 0.5s linear;
+  filter: drop-shadow(0 0 8px rgba(122, 162, 247, 0.4));
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animated-route-line {
+  stroke-dasharray: 10, 10;
+  animation: moveDash 20s linear infinite;
+  filter: drop-shadow(0 0 6px currentcolor);
+}
+
+@keyframes moveDash {
+  from {
+    stroke-dashoffset: 1000;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* CII Rating Badge */

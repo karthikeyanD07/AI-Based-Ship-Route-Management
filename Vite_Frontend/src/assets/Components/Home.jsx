@@ -6,14 +6,14 @@ const Home = () => {
   return (
     <div>
       <nav>
-        <Navbar/>
+        <Navbar />
       </nav>
       <section className='hero'>
         <div className='hero-inner'>
           <h1 className='hero-title'>NeoECDIS</h1>
           <p className='hero-sub'>Precision marine navigation with real‑time AIS, routing, and weather overlays.</p>
           <div className='hero-cta'>
-            <a className='cta primary' href='/map'>Open Live Map</a>
+            <a className='cta primary' href='/navigation'>Open Live Map</a>
             <a className='cta subtle' href='/routes'>Plan a Route</a>
           </div>
         </div>

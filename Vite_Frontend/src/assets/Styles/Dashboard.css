@@ -1,8 +1,8 @@
-/* Dashboard.css - Tokyo Night Professional Theme */
+/* Dashboard.css - NeoECDIS Premium Theme */
 .dashboard-body {
-  background-color: #1a1b26;
+  background: radial-gradient(circle at 50% 0%, #152238 0%, var(--tn-bg) 100%);
   min-height: 100vh;
-  color: #a9b1d6;
+  color: var(--tn-text-dark);
   font-family: 'Inter', sans-serif;
 }
 
@@ -15,7 +15,6 @@
   margin: 0 auto;
   padding: 24px;
   padding-top: 100px;
-  /* Space for fixed navbar */
 }
 
 /* Header Section */
@@ -30,14 +29,13 @@
 .dashboard-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: #e0af68;
-  /* Tokyo Night Yellow */
+  color: var(--tn-text);
   letter-spacing: 0.5px;
 }
 
 .last-updated {
   font-size: 14px;
-  color: #565f89;
+  color: var(--tn-text-muted);
 }
 
 /* Metrics Grid - Top Row */
@@ -50,26 +48,27 @@
 }
 
 .metric-card {
-  background: #1f2335;
-  border: 1px solid #292e42;
+  background: var(--tn-surface);
+  border: 1px solid var(--tn-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
+  border-top-width: 3px;
 }
 
 .metric-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border-color: #3b4261;
 }
 
 .metric-title {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #7aa2f7;
   font-weight: 600;
   margin-bottom: 8px;
   display: flex;
@@ -80,13 +79,11 @@
 .metric-value {
   font-size: 32px;
   font-weight: 700;
-  color: #c0caf5;
+  color: var(--tn-text);
 }
 
 .metric-sub {
   font-size: 12px;
-  color: #9ece6a;
-  /* Green */
   margin-top: 4px;
 }
 
@@ -94,8 +91,10 @@
 .fleet-panel {
   grid-column: 1 / 2;
   grid-row: 3 / 4;
-  background: #1f2335;
-  border: 1px solid #292e42;
+  background: var(--tn-surface);
+  border: 1px solid var(--tn-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -105,10 +104,10 @@
 
 .panel-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #292e42;
-  background: #24283b;
+  border-bottom: 1px solid var(--tn-border);
+  background: rgba(0, 0, 0, 0.2);
   font-weight: 600;
-  color: #bb9af7;
+  color: var(--tn-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -121,7 +120,7 @@
 
 .fleet-item {
   padding: 12px 20px;
-  border-bottom: 1px solid #292e42;
+  border-bottom: 1px solid var(--tn-border);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -130,12 +129,12 @@
 }
 
 .fleet-item:hover {
-  background: #292e42;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .ship-name {
   font-weight: 600;
-  color: #c0caf5;
+  color: var(--tn-text);
   font-size: 14px;
 }
 
@@ -143,7 +142,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #565f89;
+  color: var(--tn-text-muted);
 }
 
 .status-badge {
@@ -153,16 +152,16 @@
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  background: rgba(158, 206, 106, 0.2);
-  color: #9ece6a;
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--tn-green);
 }
 
 /* Map Panel */
 .map-panel {
   grid-column: 2 / -1;
   grid-row: 3 / 4;
-  background: #1f2335;
-  border: 1px solid #292e42;
+  background: var(--tn-surface);
+  border: 1px solid var(--tn-border);
   border-radius: 12px;
   overflow: hidden;
   height: 600px;
@@ -173,7 +172,8 @@
 .map-content {
   height: 100%;
   width: 100%;
-  background: #1a1b26;
+  background: #000;
+  /* For leaflet initial loading */
 }
 
 /* Responsive */

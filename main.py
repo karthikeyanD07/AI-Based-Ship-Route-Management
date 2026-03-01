@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Tuple
 import math
+import traceback
 
 app = FastAPI(title="NeoECDIS API", version="2.0")
 
@@ -176,91 +177,70 @@ def is_on_land(lat, lon):
 
 def get_smart_waypoints(start_lat, start_lon, end_lat, end_lon, route_type):
     """
-    Get key maritime waypoints for major shipping lanes.
-    This replaces the cargo-cult 'go around Africa' logic with actual geography.
+    Get key maritime waypoints to force different physical paths for different strategies.
+    For example, Asia to Europe can go via Suez or Cape of Good Hope.
     """
-    # Key Maritime Chokepoints
     WAYPOINTS = {
         "MALACCA": (3.0, 100.0),
         "SRI_LANKA": (5.8, 80.5),
-        "BAB_EL_MANDEB": (12.5, 43.5),
-        "SUEZ_SOUTH": (29.9, 32.5),
-        "SUEZ_NORTH": (31.2, 32.3),
-        "GIBRALTAR": (35.9, -5.4),
-        "ENGLISH_CHANNEL": (50.0, -2.0),
         "CAPE_GOOD_HOPE": (-35.0, 20.0),
-        "PANAMA_EAST": (9.3, -79.9),
-        "PANAMA_WEST": (8.9, -79.5),
-        "HORN_AFRICA": (11.8, 51.2)
+        "ENGLISH_CHANNEL": (50.0, -2.0)
     }
     
     path = []
     
-    # Singapore (approx 1, 103) -> Rotterdam (approx 51, 4)
-    # This covers the Asia -> Europe route
     is_asia_start = start_lon > 70 and -10 < start_lat < 40
     is_europe_end = end_lon < 15 and 35 < end_lat < 60
     
     if is_asia_start and is_europe_end:
-        # Standard Route: Malacca -> Sri Lanka -> Suez -> Gibraltar -> Channel
-        if route_type == "greenest": # Slow steaming / alternate
-             path = [WAYPOINTS["MALACCA"], WAYPOINTS["SRI_LANKA"], WAYPOINTS["CAPE_GOOD_HOPE"], WAYPOINTS["ENGLISH_CHANNEL"]]
-        else: # Fastest/Balanced (Suez)
-             path = [
-                 WAYPOINTS["MALACCA"], 
-                 WAYPOINTS["SRI_LANKA"], 
-                 WAYPOINTS["HORN_AFRICA"],
-                 WAYPOINTS["BAB_EL_MANDEB"],
-                 (18.0, 39.0), # Red Sea middle
-                 WAYPOINTS["SUEZ_SOUTH"],
-                 WAYPOINTS["SUEZ_NORTH"],
-                 (34.0, 25.0), # Med middle
-                 WAYPOINTS["GIBRALTAR"], 
-                 (45.0, -10.0), # Bay of Biscay outer
-                 WAYPOINTS["ENGLISH_CHANNEL"]
-             ]
-    
+        if route_type == "greenest": 
+            # Force route around Africa to avoid emissions/canal fees
+            path = [WAYPOINTS["MALACCA"], WAYPOINTS["SRI_LANKA"], WAYPOINTS["CAPE_GOOD_HOPE"], WAYPOINTS["ENGLISH_CHANNEL"]]
+            
     # Add start/end
     full_path = [(start_lat, start_lon)] + path + [(end_lat, end_lon)]
     return full_path
 
+import searoute
+
 def generate_route(lat1, lon1, lat2, lon2, num_points=20, route_type="balanced"):
     """
-    Generate ocean route avoiding land.
-    Integrates 52North WeatherRoutingTool logic conceptually.
+    Generate ocean route avoiding land using the searoute pathfinding algorithm.
     """
-    # 1. Get smart skeleton path
-    skeleton = get_smart_waypoints(lat1, lon1, lat2, lon2, route_type)
-    
-    # 2. Interpolate points
-    final_points = []
-    for i in range(len(skeleton) - 1):
-        p1 = skeleton[i]
-        p2 = skeleton[i+1]
+    try:
+        skeleton = get_smart_waypoints(lat1, lon1, lat2, lon2, route_type)
+        final_points = []
         
-        # Distance between these two waypoints
-        dist = math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
-        steps = max(2, int(dist / 5.0)) # Ensure finding granular path
+        if route_type in ["fastest", "balanced"] or len(skeleton) <= 2:
+            # Standard optimal shortest path
+            route = searoute.searoute([lon1, lat1], [lon2, lat2])
+            coords = route.get('geometry', {}).get('coordinates', [])
+            final_points = [(lat, lon) for lon, lat in coords]
+        else:
+            # Connect the waypoints sequentially for alternative paths
+            for i in range(len(skeleton) - 1):
+                p1 = skeleton[i]
+                p2 = skeleton[i+1]
+                route = searoute.searoute([p1[1], p1[0]], [p2[1], p2[0]])
+                coords = route.get('geometry', {}).get('coordinates', [])
+                segment = [(lat, lon) for lon, lat in coords]
+                
+                if not final_points:
+                    final_points.extend(segment)
+                elif len(segment) > 1:
+                    # Skip first point of segment to avoid duplicates
+                    final_points.extend(segment[1:])
         
-        for j in range(steps):
-            fraction = j / steps
-            # Linear interpolation (Mercator-ish)
-            lat = p1[0] + (p2[0] - p1[0]) * fraction
-            lon = p1[1] + (p2[1] - p1[1]) * fraction
+        if not final_points:
+            return [(lat1, lon1), (lat2, lon2)]
             
-            # 3. Simple land check (Linus Patch)
-            # If on land, nudge it (very basic, real WRT does A* on mesh)
-            if is_on_land(lat, lon):
-                # Try nudging slightly south or north
-                # This is a hack for the demo. Real solution: 52North WRT
-                if not is_on_land(lat - 1.0, lon): lat -= 1.0
-                elif not is_on_land(lat + 1.0, lon): lat += 1.0
-            
-            final_points.append((lat, lon))
-            
-    final_points.append(skeleton[-1])
-    return final_points
-    
+        return final_points
+    except Exception as e:
+        import traceback
+        print(f"Searoute routing failed: {e}")
+        traceback.print_exc()
+        return [(lat1, lon1), (lat2, lon2)]
+
 # ---------------------------------------------------------
 # NOTE: 52North WeatherRoutingTool Integration Point
 # ---------------------------------------------------------
@@ -453,7 +433,6 @@ def get_optimized_route(request: RouteRequest):
 @app.post("/api/route/compare")
 def compare_routes(request: RouteCompareRequest):
     """Compare 3 route strategies"""
-    import traceback
     try:
         if request.start_port not in PORTS:
             raise HTTPException(status_code=404, detail=f"Start port not found")
