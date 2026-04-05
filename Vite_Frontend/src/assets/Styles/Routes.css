@@ -610,6 +610,27 @@ body {
 }
 
 /* Ship Animation */
+.ship-radar-ping {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(122, 162, 247, 0.4);
+  border-radius: 50%;
+  animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  z-index: 1;
+}
+
+@keyframes radarPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
 .ship-icon {
   background: none;
   border: none;
@@ -632,6 +653,12 @@ body {
   animation: moveDash 20s linear infinite;
 }
 
+.weather-segment-line {
+  stroke-dasharray: 12, 12;
+  animation: moveDashFast 6s linear infinite;
+  stroke-linecap: round;
+}
+
 @keyframes moveDash {
   from {
     stroke-dashoffset: 1000;
@@ -640,6 +667,36 @@ body {
   to {
     stroke-dashoffset: 0;
   }
+}
+
+@keyframes moveDashFast {
+  from {
+    stroke-dashoffset: 240;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Tactical Markers Pulse */
+.tactical-weather-icon {
+  animation: markerFadeIn 0.5s ease-out;
+}
+
+.tactical-marker-inner {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.tactical-marker-inner:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px currentColor !important;
+  z-index: 999;
+}
+
+@keyframes markerFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* CII Rating Badge */

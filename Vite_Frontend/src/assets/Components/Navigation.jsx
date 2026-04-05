@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, LayersControl, useMapEvents, ZoomControl, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, LayersControl, useMapEvents, ZoomControl, Marker, Popup, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import DirectionsBoat from "@mui/icons-material/DirectionsBoat";
 import Navbar from "./Navbar";
 import { API_BASE_URL, OPENWEATHER_API_KEY } from "../../config";
 import "../Styles/Routes.css";
@@ -12,15 +13,16 @@ import "../Styles/Routes.css";
 const shipIcon = L.divIcon({
   className: 'custom-ship-marker',
   html: `
-    <div style="background-color: #e0af68; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(224, 175, 104, 0.6), inset 0 0 6px rgba(0,0,0,0.5); border: 2px solid #fff; transition: all 0.3s ease;">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" style="transform: rotate(-45deg);">
+    <div class="ship-radar-ping"></div>
+    <div style="background-color: #7aa2f7; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(122, 162, 247, 0.5), inset 0 0 8px rgba(0,0,0,0.4); border: 2.5px solid #fff; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; z-index: 2;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff" style="transform: rotate(-45deg);">
         <path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.47.26-.6.5s-.15.52-.06.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/>
       </svg>
     </div>
   `,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor: [0, -14],
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
 });
 
 const Navigation = () => {
@@ -57,14 +59,27 @@ const Navigation = () => {
 
   const handlePlanRoute = async (ship) => {
     try {
+      setLoading(true);
       const res = await axios.post(`${API_BASE_URL}/api/ports/nearest`, {
         lat: ship.lat,
         lon: ship.lon
       });
-      navigate(`/routes?mmsi=${ship.mmsi}&start=${res.data.port}`);
+      
+      const params = new URLSearchParams({
+        mmsi: ship.mmsi,
+        start: res.data.port,
+        end: ship.destination_hint || "Rotterdam",
+        type: ship.vessel_type || "container",
+        size: ship.vessel_size || "medium"
+      });
+      
+      navigate(`/routes?${params.toString()}`);
     } catch (err) {
       console.error("Failed to find nearest port:", err);
-      navigate(`/routes?mmsi=${ship.mmsi}`);
+      // Edge case: Fallback to simple query if backend fails
+      navigate(`/routes?mmsi=${ship.mmsi}&lat=${ship.lat}&lon=${ship.lon}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,6 +114,44 @@ const Navigation = () => {
     useMapEvents({ click: handleMapClick });
     return null;
   }
+
+  // Tactical Region Quick-Focus
+  const HotspotControls = () => {
+    const map = useMap();
+    const hotspots = [
+      { name: "Global", center: [6.0, 80.0], zoom: 4 },
+      { name: "Malacca", center: [1.29, 103.85], zoom: 11 },
+      { name: "Suez", center: [30.59, 32.27], zoom: 10 },
+      { name: "Cape", center: [-34.35, 18.47], zoom: 8 },
+      { name: "English Channel", center: [50.5, -0.5], zoom: 8 },
+      { name: "Panama", center: [9.08, -79.69], zoom: 11 }
+    ];
+
+    return (
+      <div className="hotspot-bar" style={{ 
+        position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', 
+        zIndex: 1000, display: 'flex', gap: '8px', background: 'rgba(26, 27, 38, 0.9)', 
+        padding: '8px', borderRadius: '40px', border: '1px solid rgba(122, 162, 247, 0.2)', 
+        backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+      }}>
+        {hotspots.map(spot => (
+          <button 
+            key={spot.name}
+            onClick={() => map.setView(spot.center, spot.zoom)}
+            style={{ 
+              background: 'transparent', border: 'none', padding: '8px 16px', 
+              color: '#94A3B8', fontSize: '12px', fontWeight: 'bold', 
+              cursor: 'pointer', borderRadius: '20px', transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => { e.target.style.color = '#7aa2f7'; e.target.style.background = 'rgba(122, 162, 247, 0.1)'; }}
+            onMouseOut={(e) => { e.target.style.color = '#94A3B8'; e.target.style.background = 'transparent'; }}
+          >
+            {spot.name}
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div style={{ background: "#1a1b26", minHeight: "100vh" }}>
@@ -209,30 +262,82 @@ const Navigation = () => {
 
             {/* Live Ship Traffic Layer */}
             {ships.map(ship => (
-              <Marker key={ship.mmsi} position={[ship.lat, ship.lon]} icon={shipIcon}>
+              <Marker key={ship.mmsi} position={[ship.lat, ship.lon]} icon={L.divIcon({
+                className: 'custom-ship-marker',
+                html: `
+                  <div class="ship-radar-ping"></div>
+                  <div style="background-color: ${ship.vessel_type === 'tanker' ? '#f7768e' : ship.vessel_type === 'bulk' ? '#e0af68' : '#7aa2f7'}; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(122, 162, 247, 0.4), inset 0 0 8px rgba(0,0,0,0.4); border: 2.5px solid #fff; transition: all 0.3s ease; position: relative;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" style="transform: rotate(${ship.cog - 45}deg);">
+                      <path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2.1c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.47.26-.6.5s-.15.52-.06.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/>
+                    </svg>
+                  </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -16],
+              })}>
                 <Popup>
-                  <div style={{ fontFamily: 'Inter', minWidth: '150px' }}>
-                    <strong>{ship.name}</strong><br />
-                    <span style={{ fontSize: '12px', color: '#565f89' }}>MMSI: {ship.mmsi}</span><br />
-                    <div style={{ margin: '8px 0', fontWeight: 'bold', color: '#7aa2f7' }}>
-                      {ship.sog} kts • {ship.status}
+                  <div style={{ fontFamily: 'Inter', minWidth: '180px', padding: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <strong style={{ fontSize: '15px', color: '#1a1b26' }}>{ship.name || "Unknown Vessel"}</strong>
+                      <span style={{ fontSize: '10px', background: '#e0af68', color: '#1a1b26', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        {(ship.vessel_type || "cargo").toUpperCase()}
+                      </span>
                     </div>
+                    
+                    <div style={{ fontSize: '12px', color: '#565f89', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>MMSI:</span> <span>{ship.mmsi}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                        <span>Status:</span> <span style={{ color: '#4ECDC4', fontWeight: 'bold' }}>{ship.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                        <span>Course:</span> <span>{ship.cog}° @ {ship.sog} kts</span>
+                      </div>
+                    </div>
+
                     <button
                       onClick={() => handlePlanRoute(ship)}
                       style={{
-                        width: '100%', padding: '6px', background: '#e0af68',
-                        border: 'none', borderRadius: '4px', cursor: 'pointer',
-                        color: '#1a1b26', fontWeight: 'bold', fontSize: '12px'
+                        width: '100%', padding: '10px', background: 'linear-gradient(135deg, #7aa2f7, #bb9af7)',
+                        border: 'none', borderRadius: '6px', cursor: 'pointer',
+                        color: '#fff', fontWeight: 'bold', fontSize: '13px',
+                        boxShadow: '0 4px 12px rgba(122, 162, 247, 0.3)',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
                       }}
                     >
-                      Plan Route from Here
+                      <DirectionsBoat fontSize="small" /> Plan Voyage Optimizer
                     </button>
+                    <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '10px', color: '#94A3B8' }}>
+                      Dest. Hint: {ship.destination_hint || "N/A"}
+                    </div>
                   </div>
                 </Popup>
               </Marker>
             ))}
 
+            {/* Port Density Clusters */}
+            <LayersControl.Overlay checked name="Port Traffic Density">
+                <>
+                  <Circle center={[1.29, 103.85]} radius={30000} pathOptions={{ color: '#4ECDC4', fillColor: '#4ECDC4', fillOpacity: 0.15 }}>
+                    <Popup>Singapore: High density port sector.</Popup>
+                  </Circle>
+                  <Circle center={[30.59, 32.27]} radius={20000} pathOptions={{ color: '#ff6b6b', fillColor: '#ff6b6b', fillOpacity: 0.1 }}>
+                    <Popup>Suez: Congestion Alert Active.</Popup>
+                  </Circle>
+                  <Circle center={[6.92, 79.86]} radius={15000} pathOptions={{ color: '#7aa2f7', fillColor: '#7aa2f7', fillOpacity: 0.2 }}>
+                    <Popup>Colombo: Busy transporthub.</Popup>
+                  </Circle>
+                </>
+            </LayersControl.Overlay>
+
             <MapClickHandler />
+            <HotspotControls />
             <ZoomControl position="bottomright" />
           </MapContainer>
         </div>

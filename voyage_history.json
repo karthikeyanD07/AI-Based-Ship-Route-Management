@@ -1,0 +1,26 @@
+[
+  {
+    "ship_id": "MMSI-235123456",
+    "start_port": "Tacoma",
+    "end_port": "Rotterdam",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-05T11:53:20.644881"
+  },
+  {
+    "ship_id": "MMSI-235123456",
+    "start_port": "Tacoma",
+    "end_port": "Rotterdam",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-05T11:49:38.587546"
+  },
+  {
+    "timestamp": "2026-04-05T11:33:25.280317",
+    "ship_id": "MMSI-235123456",
+    "start_port": "Singapore",
+    "end_port": "Rotterdam",
+    "savings_percent": -25.0,
+    "best_route_type": "balanced"
+  }
+]

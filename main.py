@@ -4,9 +4,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import math
 import traceback
+import random
+import time
+import httpx
+import json
+import os
+from datetime import datetime, timedelta
 
 app = FastAPI(title="NeoECDIS API", version="2.0")
 
@@ -113,6 +119,49 @@ SETTINGS = {
     },
     "default_speed": 12.0
 }
+
+HISTORY_FILE = "voyage_history.json"
+
+def load_history():
+    """Load voyage history safely"""
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Failed to load history: {e}")
+        return []
+
+def save_history(entry):
+    """Save a new voyage entry to history"""
+    history = load_history()
+    entry["timestamp"] = datetime.now().isoformat()
+    # Keep last 50 entries
+    history = [entry] + history[:49]
+    try:
+        with open(HISTORY_FILE, "w") as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        print(f"Failed to save history: {e}")
+
+# --- API Endpoints for Dashboard Benchmarking ---
+
+@app.get("/api/routes/history")
+def get_history_api():
+    return {"history": load_history()}
+
+class HistoryEntry(BaseModel):
+    ship_id: str
+    start_port: str
+    end_port: str
+    savings_percent: float
+    best_route_type: str = "balanced"
+
+@app.post("/api/routes/history")
+def add_history_api(entry: HistoryEntry):
+    save_history(entry.dict())
+    return {"status": "success"}
 
 # --- Helper Functions ---
 def haversine(lat1, lon1, lat2, lon2):
@@ -260,92 +309,103 @@ def generate_route(lat1, lon1, lat2, lon2, num_points=20, route_type="balanced")
 def calculate_route_distance(route_points):
     """Calculate total distance of a route"""
     total = 0
+    if not route_points or len(route_points) < 2:
+        return 0
     for i in range(len(route_points) - 1):
         lat1, lon1 = route_points[i]
         lat2, lon2 = route_points[i + 1]
         total += haversine(lat1, lon1, lat2, lon2)
     return total
 
-def calculate_emissions(distance_km, speed_knots, vessel_type="container", vessel_size="medium", fuel_type="HFO"):
-    """Calculate CO2 emissions, Fuel Cost, and CII Rating"""
-    # 1. Determine DWT (Deadweight Tonnage) based on size
-    dwt = {
-        "small": 25000,
-        "medium": 65000,
-        "large": 150000
-    }.get(vessel_size, 65000)
+async def fetch_real_weather(lat, lon, api_key):
+    """Fetch real-time weather from OpenWeatherMap"""
+    if not api_key:
+        return None
+    try:
+        async with httpx.AsyncClient() as client:
+            url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+            resp = await client.get(url, timeout=5.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return {
+                    "wind_speed": data["wind"]["speed"] * 1.94384, # m/s to knots
+                    "wind_direction": data["wind"]["deg"],
+                    "temp": data["main"]["temp"],
+                    "pressure": data["main"]["pressure"],
+                    "description": data["weather"][0]["description"]
+                }
+    except Exception as e:
+        print(f"Weather API failed: {e}")
+    return None
 
-    # 2. Base consumption (tonnes/day)
-    base_consumption = {
-        "container": 150,
-        "tanker": 120,
-        "bulk": 100
-    }.get(vessel_type, 150)
+def calculate_emissions(distance_km, speed_knots, vessel_type="container", vessel_size="medium", fuel_type="HFO"):
+    """
+    Enhanced calculation for CO2 emissions, Fuel Cost, and CII Rating.
+    Includes edge case handling for zero distance/speed.
+    """
+    if distance_km <= 0 or speed_knots <= 0:
+        return {
+            "total_co2_tonnes": 0, "fuel_consumed_tonnes": 0, "voyage_days": 0,
+            "estimated_cost_usd": 0, "cii_score": 0, "cii_rating": "N/A"
+        }
+
+    # 1. Determine DWT (Deadweight Tonnage) based on type/size
+    dwt_table = {
+        "container": {"small": 25000, "medium": 65000, "large": 150000},
+        "tanker": {"small": 35000, "medium": 110000, "large": 300000},
+        "bulk": {"small": 30000, "medium": 80000, "large": 180000}
+    }
+    dwt = dwt_table.get(vessel_type, dwt_table["container"]).get(vessel_size, 65000)
+
+    # 2. Base consumption (tonnes/day at 12 knots)
+    consumption_table = {
+        "container": 140, "tanker": 110, "bulk": 90
+    }
+    base_consumption = consumption_table.get(vessel_type, 140)
     
-    # Scale consumption by size
-    size_factor = {
-        "small": 0.6,
-        "medium": 1.0,
-        "large": 1.5
-    }.get(vessel_size, 1.0)
-    
+    # Scale by size
+    size_factor = {"small": 0.5, "medium": 1.0, "large": 1.6}.get(vessel_size, 1.0)
     consumption_per_day = base_consumption * size_factor
 
-    # 3. Adjust by speed (cube law for propulsion usually, but square approach is simple approximation)
-    speed_factor = (speed_knots / 12) ** 3
-    daily_fuel = consumption_per_day * speed_factor
+    # 3. Speed cube law (consumption ~ speed^3)
+    speed_factor = (speed_knots / 12.0) ** 3
+    daily_fuel = max(5.0, consumption_per_day * speed_factor) # Minimum idle fuel
     
-    # 4. Voyage time
+    # 4. Voyage time (add 5% margin for maneuvering/weather)
     distance_nm = distance_km / 1.852
-    hours = distance_nm / speed_knots
+    hours = (distance_nm / speed_knots) * 1.05 
     days = hours / 24
     
     # 5. Total fuel
     total_fuel = daily_fuel * days
     
-    # 6. CO2 Calculation
-    # Emission Factors (IMO 2020)
-    ef_fuel = {
-        "HFO": 3.114,
-        "MGO": 3.206,
-        "LNG": 2.750
-    }.get(fuel_type, 3.114)
-    
+    # 6. CO2 Calculation (IMO EF)
+    ef_fuel = {"HFO": 3.114, "MGO": 3.206, "LNG": 2.750}.get(fuel_type, 3.114)
     total_co2 = total_fuel * ef_fuel
     
-    # 7. Fuel Cost Estimation (Global Average Bunkers 2024 approx)
-    # LINUS PATCH: Use dynamic settings
+    # 7. Fuel Cost
     price_per_ton = SETTINGS["fuel_prices"].get(fuel_type, 550)
-    
     total_cost = total_fuel * price_per_ton
     
-    # 8. CII Calculation (grams CO2 per DWT-mile)
-    if dwt > 0 and distance_nm > 0:
-        cii_score = (total_co2 * 1000000) / (dwt * distance_nm)
-    else:
-        cii_score = 0.0
+    # 8. CII Calculation (gCO2 / DWT-nm)
+    cii_score = (total_co2 * 1_000_000) / (dwt * distance_nm) if distance_nm > 0 else 0
     
-    # Determine Rating (Approximation for Container Ships)
-    # 2023 Guidelines relative to reference line
+    # Rating logic
     if cii_score == 0: rating = "N/A"
-    elif cii_score < 5: rating = "A"
-    elif cii_score < 7: rating = "B"
-    elif cii_score < 10: rating = "C"
-    elif cii_score < 14: rating = "D"
+    elif cii_score < 4.5: rating = "A"
+    elif cii_score < 6.8: rating = "B"
+    elif cii_score < 9.5: rating = "C"
+    elif cii_score < 13.0: rating = "D"
     else: rating = "E"
     
     return {
         "total_co2_tonnes": round(total_co2, 2),
         "fuel_consumed_tonnes": round(total_fuel, 2),
         "voyage_days": round(days, 2),
-        "co2_per_km": round((total_co2 / distance_km) if distance_km > 0 else 0, 4),
-        "emission_factor": ef_fuel,
-        "fuel_type": fuel_type,
-        "vessel_type": vessel_type,
-        "vessel_size": vessel_size,
         "estimated_cost_usd": round(total_cost, 2),
         "cii_score": round(cii_score, 2),
-        "cii_rating": rating
+        "cii_rating": rating,
+        "efficiency_index": round(100 / (1 + (cii_score/10)), 1)
     }
 
 # Request Models
@@ -459,6 +519,14 @@ def compare_routes(request: RouteCompareRequest):
                 route_type=route_type
             )
             
+            # Simulated weather for each route type (different regions have different averages)
+            if "Green" in strategy or route_type == "greenest": # Longer routes like Cape
+                avg_wind = round(random.uniform(14, 22), 1)
+                avg_wave = round(random.uniform(2.5, 4.0), 1)
+            else:
+                avg_wind = round(random.uniform(8, 16), 1)
+                avg_wave = round(random.uniform(1.2, 2.8), 1)
+            
             # Calculate metrics
             distance_km = calculate_route_distance(route_points)
             distance_nm = distance_km / 1.852
@@ -475,15 +543,21 @@ def compare_routes(request: RouteCompareRequest):
             
             results.append({
                 "route_name": strategy,
-                "speed_knots": speed,
-                "distance_km": round(distance_km, 2),
-                "estimated_time_days": round(time_days, 2),
-                "total_co2_tonnes": emissions["total_co2_tonnes"],
-                "fuel_tonnes": emissions["fuel_consumed_tonnes"],
                 "route_points": route_points,
                 "color": color,
+                "distance_km": round(distance_km, 0),
+                "speed_knots": speed,
+                "time_days": round(time_days, 1),
+                "total_co2_tonnes": round(emissions["total_co2_tonnes"], 2),
+                "fuel_tonnes": round(emissions["fuel_consumed_tonnes"], 2),
                 "co2_savings_tonnes": 0.0, # Placeholder
-                "co2_savings_percent": 0.0 # Placeholder
+                "co2_savings_percent": 0.0, # Placeholder
+                "cii_rating": emissions["cii_rating"],
+                "estimated_cost_usd": emissions["estimated_cost_usd"],
+                "weather_summary": {
+                    "avg_wind_kts": avg_wind,
+                    "avg_wave_m": avg_wave
+                }
             })
 
         # 2. Calculate Savings (Baseline = Highest CO2, usually Fastest)
@@ -522,6 +596,23 @@ def get_emissions(request: EmissionsRequest):
     """Calculate emissions for a route"""
     result = calculate_emissions(request.distance_km, request.speed_knots, request.vessel_type)
     return result
+
+@app.get("/api/weather")
+async def get_simple_weather(lat: float, lon: float, appid: Optional[str] = None):
+    """
+    Get weather at a point (fallback for smart navigator map-click).
+    Matches the schema expected by Navigation.jsx map popup.
+    """
+    # Mock weather based on latitude
+    lat_factor = abs(lat) / 90
+    temp = round(28 - (lat_factor * 25) + random.uniform(-2, 2), 1)
+    wind_speed = round(5 + (lat_factor * 10) + random.uniform(-3, 3), 1)
+    pressure = round(1013 - (lat_factor * 20) + random.uniform(-5, 5), 0)
+    
+    return {
+        "main": {"temp": temp, "pressure": pressure},
+        "wind": {"speed": wind_speed, "deg": random.randint(0, 360)}
+    }
 
 @app.post("/api/route/weather-optimized")
 def weather_route(request: RouteRequest):
@@ -579,10 +670,16 @@ def weather_route(request: RouteRequest):
         # Conditions based on wind speed
         if wind_speed < 10:
             conditions = "calm"
-        elif wind_speed < 20:
+            danger_level = 0.1
+        elif wind_speed < 18:
             conditions = "moderate"
-        else:
+            danger_level = 0.4
+        elif wind_speed < 25:
             conditions = "rough"
+            danger_level = 0.7
+        else:
+            conditions = "extreme"
+            danger_level = 1.0
         
         # Speed factor based on weather
         speed_factor = max(0.65, 1.0 - (wind_speed - 10) / 60)
@@ -595,6 +692,7 @@ def weather_route(request: RouteRequest):
             "adjusted_speed": round(vessel_speed * speed_factor, 2),
             "latitude": round(lat, 2),
             "longitude": round(lon, 2),
+            "danger_level": danger_level,
             "weather": {
                 "wind_speed": round(wind_speed, 1),
                 "wind_direction": wind_direction,
@@ -625,39 +723,72 @@ def weather_route(request: RouteRequest):
 @app.get("/api/ship-traffic")
 def get_ship_traffic():
     """Simulate some ships in the Indian Ocean / SE Asia"""
-    import random
-    import traceback
     try:
         ships = []
         
-        # Base location (Indian Ocean close to Sri Lanka/Malacca)
-        base_lat, base_lon = 6.0, 80.0
+        # Consistent set of vessel names for higher fidelity simulation
+        VESSEL_NAMES = [
+            "Deep Horizon", "Ocean Explorer", "Arctic Star", "Global Carrier",
+            "Pacific Voyager", "Blue Wave", "Sea Titan", "Ever Fortune",
+            "Maersk Pioneer", "COSCO Excellence", "Norwegian Jade", "Singapore Spirit"
+        ]
         
-        for i in range(15):
-            # Randomize positions
-            lat = base_lat + random.uniform(-10, 10)
-            lon = base_lon + random.uniform(-15, 15)
+        # Base locations for different clusters
+        BASES = [
+            (6.0, 80.0),   # Sri Lanka
+            (1.0, 104.0),  # Singapore
+            (25.0, 55.0),  # Dubai/Persian Gulf
+            (12.0, 45.0)   # Aden/Red Sea
+        ]
+        
+        for i in range(25):
+            base_lat, base_lon = random.choice(BASES)
+            lat = base_lat + random.uniform(-6, 6)
+            lon = base_lon + random.uniform(-10, 10)
             
-            # Avoid land (simple check)
+            # Use global-land-mask if available
             if is_on_land(lat, lon):
-                lat -= 2.0 # Nudge south
+                lat -= 1.5 # Nudge offshore
+            
+            # Determine destination for the "Command Center" planning feature
+            potential_destinations = [p for p in PORTS.keys() if p != "Singapore"]
+            dest = random.choice(potential_destinations) if potential_destinations else "Rotterdam"
                 
             ships.append({
                 "mmsi": 412000000 + i,
-                "name": f"Container Ship {i+1}",
+                "name": VESSEL_NAMES[i % len(VESSEL_NAMES)],
                 "lat": round(lat, 4),
                 "lon": round(lon, 4),
-                "sog": round(random.uniform(10.0, 18.0), 1),
+                "sog": round(random.uniform(8.0, 19.0), 1),
                 "cog": round(random.uniform(0, 360), 0),
-                "status": "Underway using engine"
+                "status": random.choice(["Underway", "Slow Steaming", "Operational"]),
+                "destination_hint": dest,
+                "vessel_type": random.choice(["container", "tanker", "bulk"]),
+                "vessel_size": random.choice(["small", "medium", "large"])
             })
             
-        return {"ships": ships}
+        # Calculate Fleet Summary for Dashboard
+        total_sog = sum(s["sog"] for s in ships)
+        avg_sog = total_sog / len(ships) if ships else 0
+        
+        # Emissions aggregation (Simplified approximation)
+        # Assuming HFO container mid-size as baseline for fleet stats
+        fleet_co2_daily = sum(
+            calculate_emissions(200, s["sog"], s["vessel_type"], s["vessel_size"])["total_co2_tonnes"] 
+            for s in ships
+        ) * 5 # Scale up to daily estimate
+
+        return {
+            "ships": ships,
+            "summary": {
+                "active_units": len(ships),
+                "avg_fleet_speed": round(avg_sog, 1),
+                "estimated_fleet_co2_daily": round(fleet_co2_daily, 2),
+                "system_load": 22.5 # Simulated load
+            }
+        }
     except Exception as e:
-        with open("error.log", "a") as f:
-            f.write("ERROR IN SHIP TRAFFIC:\n")
-            f.write(traceback.format_exc())
-            f.write("\n")
+        print(f"Error in ship traffic: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
