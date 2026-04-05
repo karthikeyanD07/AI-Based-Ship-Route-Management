@@ -37,7 +37,11 @@ const Navigation = () => {
         // LINUS PATCH: Added timeout to prevent hanging
         const response = await axios.get(`${API_BASE_URL}/api/ship-traffic`, { timeout: 5000 });
         if (response.data && response.data.ships) {
-          setShips(response.data.ships);
+          const valid = response.data.ships.filter(
+            s => typeof s.lat === 'number' && typeof s.lon === 'number'
+              && isFinite(s.lat) && isFinite(s.lon)
+          );
+          setShips(valid);
         }
         setLoading(false);
       } catch (err) {

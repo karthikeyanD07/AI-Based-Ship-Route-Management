@@ -10,19 +10,18 @@ const Settings = () => {
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
-        fetchSettings();
-    }, []);
-
-    const fetchSettings = async () => {
-        try {
-            const res = await axios.get(`${API_BASE_URL}/api/settings`);
-            setSettings(res.data);
-            setLoading(false);
-        } catch (err) {
-            console.error("Failed to load settings", err);
-            setLoading(false);
+        // Load from localStorage if previously saved, otherwise use defaults
+        const saved = localStorage.getItem('shipRouteSettings');
+        if (saved) {
+            try { setSettings(JSON.parse(saved)); } catch { }
+        } else {
+            setSettings({
+                fuel_prices: { HFO: 450, MGO: 650, LNG: 550 },
+                default_speed: 12
+            });
         }
-    };
+        setLoading(false);
+    }, []);
 
     const handleFuelChange = (type, value) => {
         setSettings(prev => ({
@@ -43,11 +42,10 @@ const Settings = () => {
 
     const saveSettings = async () => {
         try {
-            await axios.post(`${API_BASE_URL}/api/settings`, settings);
+            localStorage.setItem('shipRouteSettings', JSON.stringify(settings));
             setMessage("Settings saved successfully!");
             setTimeout(() => setMessage(null), 3000);
         } catch (err) {
-            console.error("Failed to save settings:", err);
             setMessage("Failed to save settings.");
         }
     };

@@ -62,23 +62,21 @@ const Dashboard = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/ship-traffic`);
         const shipData = response.data.ships;
-        setShips(shipData);
+        // Filter out ships with missing/invalid coordinates
+        const validShips = (shipData || []).filter(
+          s => typeof s.lat === 'number' && typeof s.lon === 'number'
+            && isFinite(s.lat) && isFinite(s.lon)
+        );
+        setShips(validShips);
 
         // Calculate Metrics
-        const total = shipData.length;
-        const totalSpeed = shipData.reduce((acc, ship) => acc + (ship.sog || 0), 0);
+        const total = validShips.length;
+        const totalSpeed = validShips.reduce((acc, ship) => acc + (ship.sog || 0), 0);
         const avg = total > 0 ? (totalSpeed / total).toFixed(1) : 0;
-        const underway = shipData.filter(s => s.status.includes('Underway')).length;
+        const underway = validShips.filter(s => s.status && s.status.includes('Underway')).length;
+        const alerts = validShips.filter(s => s.sog < 5).length;
 
-        // Simulate Alerts (e.g. speed < 5 knots in open ocean)
-        const alerts = shipData.filter(s => s.sog < 5).length;
-
-        setMetrics({
-          totalShips: total,
-          avgSpeed: avg,
-          underwayCount: underway,
-          alerts: alerts
-        });
+        setMetrics({ totalShips: total, avgSpeed: avg, underwayCount: underway, alerts });
 
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -86,7 +84,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000); // Poll every 10s
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 

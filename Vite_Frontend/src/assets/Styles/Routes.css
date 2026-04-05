@@ -630,7 +630,6 @@ body {
 .animated-route-line {
   stroke-dasharray: 10, 10;
   animation: moveDash 20s linear infinite;
-  filter: drop-shadow(0 0 6px currentcolor);
 }
 
 @keyframes moveDash {
