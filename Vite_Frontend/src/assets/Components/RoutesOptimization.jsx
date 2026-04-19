@@ -557,7 +557,7 @@ const RoutesOptimization = () => {
                           <div className="metric">
                             <div className="metric-icon"><AccessTime sx={{ color: 'var(--tn-purple)' }} /></div>
                             <div className="metric-data">
-                              <span className="metric-value">{route.estimated_time_days}</span>
+                              <span className="metric-value">{route.time_days ?? route.estimated_time_days ?? '—'}</span>
                               <span className="metric-unit">days</span>
                             </div>
                           </div>

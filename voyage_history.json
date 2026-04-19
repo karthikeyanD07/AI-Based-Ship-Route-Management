@@ -1,5 +1,29 @@
 [
   {
+    "ship_id": "MMSI-412000000",
+    "start_port": "Chennai",
+    "end_port": "Santos",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-19T18:14:53.147590"
+  },
+  {
+    "ship_id": "MMSI-412000000",
+    "start_port": "Dubai",
+    "end_port": "Alexandria",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-19T18:13:31.741939"
+  },
+  {
+    "ship_id": "MMSI-412000000",
+    "start_port": "Dubai",
+    "end_port": "Alexandria",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-19T18:10:04.467503"
+  },
+  {
     "ship_id": "MMSI-412000015",
     "start_port": "Ho Chi Minh",
     "end_port": "Barcelona",
