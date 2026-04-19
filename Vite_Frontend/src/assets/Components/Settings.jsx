@@ -83,6 +83,8 @@ const Settings = () => {
                                 <input
                                     type="number"
                                     value={price}
+                                    min="50"
+                                    max="5000"
                                     onChange={(e) => handleFuelChange(type, e.target.value)}
                                     style={{
                                         width: '100%',
@@ -105,6 +107,9 @@ const Settings = () => {
                         <input
                             type="number"
                             value={settings.default_speed}
+                            min="5"
+                            max="30"
+                            step="0.5"
                             onChange={(e) => handleSpeedChange(e.target.value)}
                             style={{
                                 width: '100%',
@@ -129,10 +134,14 @@ const Settings = () => {
                             borderRadius: '8px',
                             fontWeight: '700',
                             cursor: 'pointer',
-                            fontSize: '16px'
+                            fontSize: '16px',
+                            transition: 'all 0.15s ease'
                         }}
+                        onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.opacity = '0.85'; }}
+                        onMouseUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.opacity = ''; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.opacity = ''; }}
                     >
-                        Save Configuration
+                        💾 Save Configuration
                     </button>
                 </div>
 

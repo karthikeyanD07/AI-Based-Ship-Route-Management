@@ -31,6 +31,7 @@
 .navbar-title h1 {
   background: linear-gradient(to right, #7aa2f7, #bb9af7);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -178,6 +179,56 @@
   transition: opacity 0.2s;
 }
 
+/* Active nav item — P6 */
+.navbar-main li.nav-active {
+  background-color: rgba(122, 162, 247, 0.15);
+  color: #7aa2f7;
+  border-left-color: #7aa2f7;
+}
+
 .profile-links a:hover {
   opacity: 0.9;
+}
+
+/* Light theme overrides — I7 */
+[data-theme="light"] body,
+[data-theme="light"] .dashboard-body,
+[data-theme="light"] .app-container {
+  background: #f0f4ff;
+  color: #1a1b26;
+}
+
+[data-theme="light"] .navbar-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid #d0d7e8;
+}
+
+[data-theme="light"] .navbar-main {
+  background: #ffffff;
+  border-right: 1px solid #d0d7e8;
+}
+
+[data-theme="light"] .navbar-main li {
+  color: #374151;
+}
+
+[data-theme="light"] .navbar-main li:hover,
+[data-theme="light"] .navbar-main li.nav-active {
+  background-color: rgba(122, 162, 247, 0.1);
+}
+
+[data-theme="light"] .profile-card {
+  background: #ffffff;
+  border: 1px solid #d0d7e8;
+  color: #374151;
+}
+
+/* Global invisible scrollbar — V1 */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }

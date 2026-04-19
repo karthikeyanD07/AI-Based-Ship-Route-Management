@@ -398,6 +398,7 @@ def calculate_emissions(distance_km, speed_knots, vessel_type="container", vesse
     elif cii_score < 13.0: rating = "D"
     else: rating = "E"
     
+    distance_nm_safe = distance_nm if distance_nm > 0 else 1
     return {
         "total_co2_tonnes": round(total_co2, 2),
         "fuel_consumed_tonnes": round(total_fuel, 2),
@@ -405,7 +406,13 @@ def calculate_emissions(distance_km, speed_knots, vessel_type="container", vesse
         "estimated_cost_usd": round(total_cost, 2),
         "cii_score": round(cii_score, 2),
         "cii_rating": rating,
-        "efficiency_index": round(100 / (1 + (cii_score/10)), 1)
+        "efficiency_index": round(100 / (1 + (cii_score/10)), 1),
+        # Frontend-required fields
+        "co2_per_km": round(total_co2 / (distance_km if distance_km > 0 else 1), 4),
+        "emission_factor": round(ef_fuel, 3),
+        "vessel_type": vessel_type,
+        "vessel_size": vessel_size,
+        "fuel_type": fuel_type
     }
 
 # Request Models
@@ -548,6 +555,7 @@ def compare_routes(request: RouteCompareRequest):
                 "distance_km": round(distance_km, 0),
                 "speed_knots": speed,
                 "time_days": round(time_days, 1),
+                "estimated_time_days": round(time_days, 1),  # alias for frontend compat
                 "total_co2_tonnes": round(emissions["total_co2_tonnes"], 2),
                 "fuel_tonnes": round(emissions["fuel_consumed_tonnes"], 2),
                 "co2_savings_tonnes": 0.0, # Placeholder

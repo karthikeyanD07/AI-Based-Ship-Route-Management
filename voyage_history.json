@@ -1,5 +1,69 @@
 [
   {
+    "ship_id": "MMSI-412000015",
+    "start_port": "Ho Chi Minh",
+    "end_port": "Barcelona",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:54:06.858785"
+  },
+  {
+    "ship_id": "MMSI-412000015",
+    "start_port": "Ho Chi Minh",
+    "end_port": "Busan",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:53:58.920464"
+  },
+  {
+    "ship_id": "MMSI-412000015",
+    "start_port": "Ho Chi Minh",
+    "end_port": "Tokyo",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:53:48.020737"
+  },
+  {
+    "ship_id": "MMSI-412000015",
+    "start_port": "Ho Chi Minh",
+    "end_port": "Sydney",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:53:35.688703"
+  },
+  {
+    "ship_id": "MMSI-412000015",
+    "start_port": "Ho Chi Minh",
+    "end_port": "Port Klang",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:53:25.421330"
+  },
+  {
+    "ship_id": "MMSI-235123456",
+    "start_port": "Singapore",
+    "end_port": "Rotterdam",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T13:39:20.442688"
+  },
+  {
+    "ship_id": "MMSI-412000011",
+    "start_port": "Karachi",
+    "end_port": "Rotterdam",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T12:46:37.707358"
+  },
+  {
+    "ship_id": "MMSI-235123456",
+    "start_port": "Tacoma",
+    "end_port": "Rotterdam",
+    "savings_percent": 36.0,
+    "best_route_type": "balanced",
+    "timestamp": "2026-04-06T12:45:23.384688"
+  },
+  {
     "ship_id": "MMSI-235123456",
     "start_port": "Tacoma",
     "end_port": "Rotterdam",

@@ -50,6 +50,16 @@ body {
   overflow: hidden;
 }
 
+/* V4: Routes page needs top padding for Navbar */
+.app-container.routes-page {
+  padding-top: 0;
+}
+
+.app-container.routes-page .main-layout {
+  margin-top: 72px; /* Navbar height */
+  height: calc(100vh - 72px);
+}
+
 /* Header */
 .app-header {
   background: rgba(7, 11, 21, 0.8);
@@ -168,6 +178,29 @@ body {
   transform: translateY(-1px);
 }
 
+/* P8: Visible press state for all buttons */
+.btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: none;
+  opacity: 0.9;
+}
+
+/* I5: Spinner inside button */
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
 .btn-secondary {
   background: var(--tn-surface-light);
   color: var(--tn-text);
@@ -201,6 +234,19 @@ body {
   letter-spacing: 1px;
   padding: 12px 0;
   user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+
+/* P5: Smooth open/close animation for details */
+.advanced-settings[open] > :not(summary) {
+  animation: detailsOpen 0.2s ease-out;
+}
+
+@keyframes detailsOpen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Content Area */

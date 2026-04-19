@@ -9,6 +9,7 @@ import L from 'leaflet';
 import axios from 'axios';
 import '../Styles/Dashboard.css';
 import { API_BASE_URL } from "../../config";
+
 // Custom Professional Ship SVG Marker
 const shipIcon = L.divIcon({
   className: 'custom-ship-marker',
@@ -34,27 +35,33 @@ const Dashboard = () => {
     avgSpeed: 0,
     underwayCount: 0,
     alerts: 0,
-    fleetCo2: 0 // PERSISTENCE PATCH: Global Daily CO2
+    fleetCo2: 0
   });
   const [history, setHistory] = useState([]);
+  const [planningShip, setPlanningShip] = useState(null); // I1: track which ship is being planned
 
-  // Action: Bridge to Routes Page
+  // C2 + I1: Bridge to Routes Page — pass nearest port as start AND destination as end
   const handlePlanRoute = async (ship) => {
+    setPlanningShip(ship.mmsi); // I1: show loading state on that item
     try {
-      // 1. Find nearest port to ship's current location
       const res = await axios.post(`${API_BASE_URL}/api/ports/nearest`, {
         lat: ship.lat,
         lon: ship.lon
       });
-      const nearestPort = res.data.port; // e.g. "Colombo"
+      const nearestPort = res.data.port;
 
-      // 2. Navigate with params
-      navigate(`/routes?mmsi=${ship.mmsi}&start=${nearestPort}`);
+      // C2: Pass destination_hint as end port
+      const rawMmsi = String(ship.mmsi).replace(/^MMSI-/, '');
+      const params = new URLSearchParams({ mmsi: rawMmsi, start: nearestPort });
+      if (ship.destination_hint) params.set('end', ship.destination_hint);
 
+      navigate(`/routes?${params.toString()}`);
     } catch (err) {
       console.error("Failed to find nearest port", err);
-      // Fallback: just send MMSI
-      navigate(`/routes?mmsi=${ship.mmsi}`);
+      const rawMmsi = String(ship.mmsi).replace(/^MMSI-/, '');
+      navigate(`/routes?mmsi=${rawMmsi}`);
+    } finally {
+      setPlanningShip(null);
     }
   };
 
@@ -64,14 +71,12 @@ const Dashboard = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/ship-traffic`);
         const shipData = response.data.ships;
-        // Filter out ships with missing/invalid coordinates
         const validShips = (shipData || []).filter(
           s => typeof s.lat === 'number' && typeof s.lon === 'number'
             && isFinite(s.lat) && isFinite(s.lon)
         );
         setShips(validShips);
 
-        // Calculate Metrics
         const summary = response.data.summary || {};
         const total = validShips.length;
         const totalSpeed = validShips.reduce((acc, ship) => acc + (ship.sog || 0), 0);
@@ -79,10 +84,10 @@ const Dashboard = () => {
         const underway = validShips.filter(s => s.status && s.status.includes('Underway')).length;
         const alerts = validShips.filter(s => s.sog < 5).length;
 
-        setMetrics({ 
-          totalShips: total, 
-          avgSpeed: avg, 
-          underwayCount: underway, 
+        setMetrics({
+          totalShips: total,
+          avgSpeed: avg,
+          underwayCount: underway,
           alerts,
           fleetCo2: summary.estimated_fleet_co2_daily || 0
         });
@@ -104,11 +109,43 @@ const Dashboard = () => {
     fetchData();
     fetchHistory();
     const interval = setInterval(() => {
-        fetchData();
-        fetchHistory();
+      fetchData();
+      fetchHistory();
     }, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // V2: Real efficiency score calculated from speed (higher speed relative to fleet average = higher score)
+  const getEfficiencyScore = (ship) => {
+    const avgFleet = parseFloat(metrics.avgSpeed) || 12;
+    const ratio = ship.sog / avgFleet;
+    // Vessels near avg speed are most efficient (not racing, not crawling)
+    const score = Math.max(60, Math.min(99, 100 - Math.abs(ratio - 1) * 40));
+    return score.toFixed(1);
+  };
+
+  // V3: Dynamic alerts generated from real ship data
+  const getDynamicAlerts = () => {
+    const alerts = [];
+    const slowShips = ships.filter(s => s.sog < 3 && s.status !== 'At Anchor');
+    if (slowShips.length > 0) {
+      alerts.push({ level: 'critical', icon: '⚠️', title: 'DRIFTING VESSELS', msg: `${slowShips.length} vessel(s) near-stationary in monitored sector.` });
+    }
+    const fastShips = ships.filter(s => s.sog > 18);
+    if (fastShips.length > 0) {
+      alerts.push({ level: 'warning', icon: '⚡', title: 'OVER-SPEED ALERT', msg: `${fastShips.length} vessel(s) exceeding 18 kts — elevated fuel burn.` });
+    }
+    if (ships.length > 20) {
+      alerts.push({ level: 'warning', icon: '⚓', title: 'TRAFFIC DENSITY', msg: `${ships.length} vessels active in sector — congestion risk elevated.` });
+    }
+    // Always have at least one advisory
+    if (alerts.length === 0) {
+      alerts.push({ level: 'info', icon: '✅', title: 'SECTOR NOMINAL', msg: 'All vessels operating within standard parameters.' });
+    }
+    return alerts;
+  };
+
+  const dynamicAlerts = getDynamicAlerts();
 
   return (
     <div className='dashboard-body'>
@@ -178,48 +215,62 @@ const Dashboard = () => {
                </div>
              ) : (
                 history.map((entry, idx) => (
-                  <div key={idx} className="fleet-item history-item" onClick={() => navigate(`/routes?mmsi=${entry.ship_id}&start=${entry.start_port}&end=${entry.end_port}`)}>
+                  <div
+                    key={idx}
+                    className="fleet-item history-item"
+                    title="Click to re-run this voyage"
+                    onClick={() => navigate(`/routes?mmsi=${entry.ship_id}&start=${entry.start_port}&end=${entry.end_port}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
                      <div className="ship-name" style={{ fontSize: '13px' }}>{entry.start_port} → {entry.end_port}</div>
                      <div className="ship-meta">
                         <span style={{ color: '#4ECDC4', fontWeight: 'bold' }}>{entry.savings_percent}% Save</span>
+                        <span style={{ fontSize: '10px', color: '#7aa2f7' }}>↺ Re-run</span>
                         <span style={{ fontSize: '10px' }}>{new Date(entry.timestamp).toLocaleDateString()}</span>
                      </div>
                   </div>
                 ))
              )}
           </div>
-          
+
           <div className="panel-header" style={{ marginTop: '24px' }}>
             <span>Fleet Efficiency Leaderboard</span>
             <span style={{ fontSize: '11px', color: '#9ece6a' }}>Top 5 Vessels</span>
           </div>
           <div className="fleet-list leaderboard-list">
-             {(ships || []).slice(0, 5).sort((a,b) => b.sog - a.sog).map((ship, idx) => (
+             {/* V2: Sort by real efficiency score */}
+             {(ships || [])
+               .map(ship => ({ ...ship, effScore: parseFloat(getEfficiencyScore(ship)) }))
+               .sort((a, b) => b.effScore - a.effScore)
+               .slice(0, 5)
+               .map((ship, idx) => (
                <div key={ship.mmsi} className="fleet-item" style={{ borderLeft: `3px solid ${idx === 0 ? '#9ece6a' : idx === 1 ? '#7aa2f7' : '#565f89'}` }}>
                   <div className="ship-name" style={{ fontSize: '13px' }}>
                      <span style={{ color: '#9ece6a', marginRight: '8px' }}>#{idx+1}</span>
                      {ship.name}
                   </div>
                   <div className="ship-meta">
-                     <span style={{ color: '#9ece6a' }}>98.4% Efficiency Score</span>
+                     <span style={{ color: '#9ece6a' }}>{ship.effScore}% Efficiency Score</span>
+                     <span style={{ color: '#565f89', fontSize: '11px' }}>{ship.sog} kts</span>
                   </div>
                </div>
              ))}
           </div>
 
+          {/* V3: Dynamic alerts from real data */}
           <div className="panel-header" style={{ marginTop: '24px' }}>
             <span>Mission Control: Alerts</span>
             <span style={{ fontSize: '11px', color: '#f7768e' }}>Real-time Feed</span>
           </div>
           <div className="fleet-list alerts-feed" style={{ maxHeight: '180px' }}>
-             <div className="fleet-item alert-item critical">
-                <div className="ship-name" style={{ color: '#f7768e', fontSize: '11px' }}>⚠️ SECURITY ALERT</div>
-                <div style={{ fontSize: '12px', color: '#F8FAFC' }}>High congestion near Singapore anchorage.</div>
-             </div>
-             <div className="fleet-item alert-item">
-                <div className="ship-name" style={{ color: '#e0af68', fontSize: '11px' }}>⚠️ WEATHER ADVISORY</div>
-                <div style={{ fontSize: '12px', color: '#F8FAFC' }}>Cyclone forming in Bay of Bengal sector.</div>
-             </div>
+             {dynamicAlerts.map((alert, idx) => (
+               <div key={idx} className={`fleet-item alert-item ${alert.level}`}>
+                  <div className="ship-name" style={{ color: alert.level === 'critical' ? '#f7768e' : '#e0af68', fontSize: '11px' }}>
+                    {alert.icon} {alert.title}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#F8FAFC' }}>{alert.msg}</div>
+               </div>
+             ))}
           </div>
 
           <div className="panel-header" style={{ marginTop: '24px' }}>
@@ -228,11 +279,20 @@ const Dashboard = () => {
           </div>
           <div className="fleet-list">
             {ships.map(ship => (
-              <div key={ship.mmsi} className="fleet-item" onClick={() => handlePlanRoute(ship)}>
+              <div
+                key={ship.mmsi}
+                className="fleet-item"
+                onClick={() => !planningShip && handlePlanRoute(ship)}
+                style={{ cursor: planningShip === ship.mmsi ? 'wait' : 'pointer', opacity: planningShip && planningShip !== ship.mmsi ? 0.6 : 1 }}
+              >
                 <div className="ship-name">{ship.name}</div>
                 <div className="ship-meta">
                   <span>MMSI: {ship.mmsi}</span>
-                  <span style={{ color: '#7aa2f7' }}>{ship.sog} kts</span>
+                  {/* I1: Loading indicator per ship */}
+                  {planningShip === ship.mmsi
+                    ? <span style={{ color: '#e0af68', fontSize: '11px' }}>⏳ Planning...</span>
+                    : <span style={{ color: '#7aa2f7' }}>{ship.sog} kts</span>
+                  }
                 </div>
               </div>
             ))}
@@ -256,15 +316,17 @@ const Dashboard = () => {
                 <Popup>
                   <strong>{ship.name}</strong><br />
                   Speed: {ship.sog} kts<br />
-                  Status: {ship.status}
+                  Status: {ship.status}<br />
+                  Dest: {ship.destination_hint || 'N/A'}
                   <button
                     onClick={() => handlePlanRoute(ship)}
                     style={{
                       marginTop: '8px', padding: '4px 8px', background: '#7aa2f7',
-                      border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#1a1b26', fontWeight: 'bold'
+                      border: 'none', borderRadius: '4px', cursor: 'pointer', color: '#1a1b26',
+                      fontWeight: 'bold', display: 'block', width: '100%'
                     }}
                   >
-                    Plan Route
+                    {planningShip === ship.mmsi ? '⏳ Planning...' : 'Plan Route'}
                   </button>
                 </Popup>
               </Marker>

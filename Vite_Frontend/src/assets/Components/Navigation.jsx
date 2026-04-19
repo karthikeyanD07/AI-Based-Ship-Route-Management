@@ -31,6 +31,7 @@ const Navigation = () => {
   const [activeLayer, setActiveLayer] = useState("chart");
   const [ships, setShips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [routingShip, setRoutingShip] = useState(null); // I3: track popup button loading
 
   // Fetch Ships logic 
   useEffect(() => {
@@ -58,6 +59,7 @@ const Navigation = () => {
   }, []);
 
   const handlePlanRoute = async (ship) => {
+    setRoutingShip(ship.mmsi); // I3: show loading in popup button
     try {
       setLoading(true);
       const res = await axios.post(`${API_BASE_URL}/api/ports/nearest`, {
@@ -65,8 +67,9 @@ const Navigation = () => {
         lon: ship.lon
       });
       
+      const rawMmsi = String(ship.mmsi).replace(/^MMSI-/i, '').slice(0, 9);
       const params = new URLSearchParams({
-        mmsi: ship.mmsi,
+        mmsi: rawMmsi,
         start: res.data.port,
         end: ship.destination_hint || "Rotterdam",
         type: ship.vessel_type || "container",
@@ -76,10 +79,11 @@ const Navigation = () => {
       navigate(`/routes?${params.toString()}`);
     } catch (err) {
       console.error("Failed to find nearest port:", err);
-      // Edge case: Fallback to simple query if backend fails
-      navigate(`/routes?mmsi=${ship.mmsi}&lat=${ship.lat}&lon=${ship.lon}`);
+      const rawMmsi = String(ship.mmsi).replace(/^MMSI-/i, '').slice(0, 9);
+      navigate(`/routes?mmsi=${rawMmsi}&lat=${ship.lat}&lon=${ship.lon}`);
     } finally {
       setLoading(false);
+      setRoutingShip(null);
     }
   };
 
@@ -159,7 +163,7 @@ const Navigation = () => {
 
       <div style={{ padding: "100px 24px 24px 24px" }}>
         {/* Header with Toggles */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h1 style={{ color: "#e0af68", fontSize: "28px", fontWeight: "700", margin: 0 }}>Smart Navigator</h1>
             <p style={{ color: "#565f89", margin: "4px 0 0 0", fontSize: "14px" }}>
@@ -299,9 +303,13 @@ const Navigation = () => {
 
                     <button
                       onClick={() => handlePlanRoute(ship)}
+                      disabled={routingShip === ship.mmsi}
                       style={{
-                        width: '100%', padding: '10px', background: 'linear-gradient(135deg, #7aa2f7, #bb9af7)',
-                        border: 'none', borderRadius: '6px', cursor: 'pointer',
+                        width: '100%', padding: '10px',
+                        background: routingShip === ship.mmsi
+                          ? 'rgba(122, 162, 247, 0.4)'
+                          : 'linear-gradient(135deg, #7aa2f7, #bb9af7)',
+                        border: 'none', borderRadius: '6px', cursor: routingShip === ship.mmsi ? 'wait' : 'pointer',
                         color: '#fff', fontWeight: 'bold', fontSize: '13px',
                         boxShadow: '0 4px 12px rgba(122, 162, 247, 0.3)',
                         transition: 'all 0.2s ease',
@@ -311,7 +319,8 @@ const Navigation = () => {
                         gap: '8px'
                       }}
                     >
-                      <DirectionsBoat fontSize="small" /> Plan Voyage Optimizer
+                      <DirectionsBoat fontSize="small" />
+                      {routingShip === ship.mmsi ? '⏳ Planning...' : 'Plan Voyage Optimizer'}
                     </button>
                     <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '10px', color: '#94A3B8' }}>
                       Dest. Hint: {ship.destination_hint || "N/A"}

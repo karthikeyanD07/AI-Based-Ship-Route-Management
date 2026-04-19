@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "./Navbar";
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
@@ -75,8 +76,8 @@ const ShipMarker = ({ routePositions, color }) => {
 };
 
 const RoutesOptimization = () => {
-  // Form State
-  const [mmsi, setMmsi] = useState("235123456");
+  // Form State — default MMSI is empty until URL param sets it
+  const [mmsi, setMmsi] = useState("");
   const [ports, setPorts] = useState([]);
   const [startPort, setStartPort] = useState("");
   const [endPort, setEndPort] = useState("");
@@ -119,7 +120,7 @@ const RoutesOptimization = () => {
       const response = await axios.get(`${API_BASE_URL}/api/ports/all`);
       setPorts(response.data.ports);
 
-      // COMMAND CENTER PATCH: Enhanced param handling for seamless Live-to-Plan transition
+      // C1/C4: Enhanced param handling — strip MMSI- prefix, only use defaults if no URL param given
       const params = new URLSearchParams(window.location.search);
       const paramMmsi = params.get('mmsi');
       const paramStart = params.get('start');
@@ -128,28 +129,27 @@ const RoutesOptimization = () => {
       const paramSize = params.get('size');
 
       if (response.data.ports.length > 0) {
-        if (paramMmsi) setMmsi(paramMmsi);
+        // C4: Strip MMSI- prefix (Navigator sends 'MMSI-412000000', we need '412000000')
+        if (paramMmsi) {
+          const cleanMmsi = paramMmsi.replace(/^MMSI-/i, '').slice(0, 9);
+          setMmsi(cleanMmsi);
+        } else if (!mmsi) {
+          setMmsi("235123456"); // Default only if nothing came from URL
+        }
         if (paramType) setVesselType(paramType);
         if (paramSize) setVesselSize(paramSize);
 
-        // Smart Port Matching
-        const resolvePort = (p) => response.data.ports.find(port => port.toLowerCase() === p?.toLowerCase());
-        
-        const finalStart = resolvePort(paramStart) || "Singapore";
-        const finalEnd = resolvePort(paramEnd) || "Rotterdam";
+        // C1: Smart Port Matching — only use fallback default if NO param was given
+        const resolvePort = (p) => {
+          if (!p) return null;
+          return response.data.ports.find(port => port.toLowerCase() === p.toLowerCase()) || null;
+        };
 
-        setStartPort(finalStart);
-        setStartSearch(finalStart);
-        setEndPort(finalEnd);
-        setEndSearch(finalEnd);
+        const finalStart = resolvePort(paramStart) ?? (paramStart ? null : "Singapore");
+        const finalEnd = resolvePort(paramEnd) ?? (paramEnd ? null : "Rotterdam");
 
-        // Auto-Trigger Analysis if params present
-        if (paramStart && paramEnd) {
-          setTimeout(() => {
-            // We need to wait for state to settle or use a ref-like approach
-            // For simplicity in this demo, we'll let the user click check or trigger if data is ready
-          }, 500);
-        }
+        if (finalStart) { setStartPort(finalStart); setStartSearch(finalStart); }
+        if (finalEnd) { setEndPort(finalEnd); setEndSearch(finalEnd); }
       }
     } catch (err) {
       console.error("Failed to load ports:", err);
@@ -305,14 +305,9 @@ const RoutesOptimization = () => {
   };
 
   return (
-    <div className="app-container">
-      {/* Header */}
-      <header className="app-header">
-        <h1>
-          <DirectionsBoat sx={{ color: 'var(--tn-blue)', fontSize: 28 }} />
-          NeoECDIS Maritime Intelligence
-        </h1>
-      </header>
+    <div className="app-container routes-page">
+      {/* V4: Use shared Navbar instead of standalone header */}
+      <Navbar />
 
       <div className="main-layout">
         {/* Sidebar */}
@@ -430,20 +425,29 @@ const RoutesOptimization = () => {
             </div>
           </details>
 
+          {/* I5: Buttons with visible loading spinner */}
           <button
             className="btn btn-primary"
             onClick={compareRoutes}
             disabled={loading || !startPort || !endPort}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
-            {loading && activeView === 'comparison' ? 'Analyzing...' : 'Compare Routes'}
+            {loading && activeView === 'comparison'
+              ? <><span className="btn-spinner" />Analyzing...</>
+              : '⚓ Compare Routes'
+            }
           </button>
 
           <button
             className="btn btn-secondary"
             onClick={getWeatherRoute}
             disabled={loading || !startPort || !endPort}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
-            {loading && activeView === 'weather' ? 'Loading...' : 'Weather Routing'}
+            {loading && activeView === 'weather'
+              ? <><span className="btn-spinner" />Loading...</>
+              : '⛈️ Weather Routing'
+            }
           </button>
         </aside>
 
@@ -459,11 +463,20 @@ const RoutesOptimization = () => {
             >
               Route Comparison
             </button>
+            {/* C3: Only re-fetch emissions if data doesn't exist yet */}
             <button
               className={`tab-btn ${activeView === 'emissions' ? 'active' : ''}`}
-              onClick={() => comparisonData ? calculateEmissions() : setError('Compare routes first')}
+              onClick={() => {
+                if (emissionsData) {
+                  setActiveView('emissions');
+                } else if (comparisonData) {
+                  calculateEmissions();
+                } else {
+                  setError('Compare routes first');
+                }
+              }}
             >
-              Emissions
+              📊 Emissions
             </button>
             <button
               className={`tab-btn ${activeView === 'weather' ? 'active' : ''}`}
@@ -523,7 +536,12 @@ const RoutesOptimization = () => {
                     {comparisonData.routes.map(route => (
                       <div key={route.route_name} className={`route-card ${route.route_name}`}>
                         <div className="card-header">
-                          <h3>{route.route_name.toUpperCase()}</h3>
+                          {/* V5: Explicit color per route name so it's not illegible */}
+                          <h3 style={{
+                            color: route.route_name === 'fastest' ? 'var(--route-fastest)'
+                              : route.route_name === 'balanced' ? 'var(--route-balanced)'
+                              : 'var(--route-greenest)'
+                          }}>{route.route_name.toUpperCase()}</h3>
                           <div className="speed-badge">{route.speed_knots} knots</div>
                         </div>
 
@@ -883,3 +901,4 @@ const RoutesOptimization = () => {
 };
 
 export default RoutesOptimization;
+
